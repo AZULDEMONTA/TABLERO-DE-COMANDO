@@ -10,20 +10,24 @@
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
 :root {
-  --fondo: #F3F4F0;
+  --fondo: #EDF1F6;
   --tarjeta: #FFFFFF;
-  --tinta: #17201B;
-  --tenue: #5B655E;
-  --borde: #DADDD5;
-  --borde-2: #C9CDC4;
-  --pista: #E8EAE4;
-  --acento: #0F5E52;
-  --acento-suave: #E1EFEC;
-  --naranja: #B4540F;
-  --naranja-texto: #8F420B;
-  --ok-bg: #E3F1EA; --ok-tx: #1F6B4A;
-  --warn-bg: #FBEFD9; --warn-tx: #8A5205;
-  --bad-bg: #F9E3DE; --bad-tx: #A12E1B;
+  --tinta: #0E1E33;
+  --tenue: #52607A;
+  --borde: #D5DDE8;
+  --borde-2: #BFCAD8;
+  --pista: #E1E7EF;
+  --gris: #A3AFBF;
+  --acento: #1D4E89;
+  --acento-suave: #E0EAF6;
+  --naranja: #C2620E;
+  --naranja-texto: #9A4A06;
+  --verde: #1A6E4A;
+  --rojo: #B42318;
+  --ok-bg: #E1F2E9; --ok-tx: #1A6E4A;
+  --warn-bg: #FCEFD7; --warn-tx: #8A5205;
+  --bad-bg: #FBE4E1; --bad-tx: #B42318;
+  --v0: #1D4E89; --v1: #6F93BF; --v2: #E3B464; --v3: #CB7A2C; --v4: #B42318;
 }
 
 * { box-sizing: border-box; }
@@ -105,7 +109,7 @@ button.chip:hover, select.chip:hover { border-color: var(--tinta); }
 .par .valor { font-size: 30px; font-weight: 600; }
 .grafico { position: relative; height: 120px; display: flex; align-items: flex-end; gap: 3px; border-bottom: 1px solid var(--borde-2); }
 .grafico .b { flex: 1 1 0; border-radius: 2px 2px 0 0; background: var(--acento); min-height: 1px; }
-.grafico .b.futuro { background: transparent; border: 1px dashed #9AA197; border-bottom: none; }
+.grafico .b.futuro { background: transparent; border: 1px dashed var(--gris); border-bottom: none; }
 .grafico .linea { position: absolute; left: 0; right: 0; border-top: 1.5px dashed var(--tinta); pointer-events: none; }
 .eje { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--tenue); }
 
@@ -122,7 +126,7 @@ button.chip:hover, select.chip:hover { border-color: var(--tinta); }
 .resultado { display: flex; flex-direction: column; gap: 10px; padding: 20px; border: 1px solid var(--borde); border-radius: 4px; }
 .resultado .nombre { font-size: 15px; font-weight: 700; }
 .resultado .valor { font-size: 36px; font-weight: 600; }
-.negativo { color: var(--bad-tx); }
+.negativo { color: var(--rojo); }
 
 /* Tabla */
 .scroll-x { overflow-x: auto; }
@@ -135,7 +139,7 @@ td:last-child { font-weight: 600; }
 .pie { font-size: 12px; color: var(--tenue); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 
 .aviso { padding: 16px 20px; border-radius: 6px; font-size: 14px; line-height: 1.5; }
-.aviso.error { background: var(--bad-bg); color: var(--bad-tx); border: 1px solid #E8B4A9; }
+.aviso.error { background: var(--bad-bg); color: var(--bad-tx); border: 1px solid #F0B8B1; }
 .aviso.info { background: var(--warn-bg); color: var(--warn-tx); border: 1px solid #EBCB94; }
 .vacio { color: var(--tenue); font-size: 14px; }
 
@@ -149,6 +153,36 @@ td:last-child { font-weight: 600; }
   .eje span:nth-child(2) { display: none; }
 }
 
+/* Ventas por mes vs. año anterior */
+.resumenes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.resumenes .stat .valor { font-size: 26px; }
+.leyenda-anual { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--tenue); align-items: center; }
+.leyenda-anual span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; flex: none; }
+.sw-proy { border: 1px dashed var(--tinta); }
+.anual { min-width: 680px; display: flex; flex-direction: column; gap: 6px; }
+.anual-barras { height: 230px; display: flex; align-items: stretch; gap: 10px; border-bottom: 1px solid var(--borde-2); }
+.anual-mes { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.anual-var { height: 16px; text-align: center; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.anual-var.sube { color: var(--verde); } .anual-var.baja { color: var(--rojo); }
+.anual-par { flex: 1 1 0; display: flex; align-items: flex-end; gap: 3px; }
+.anual-par > div { flex: 1 1 0; border-radius: 2px 2px 0 0; }
+.b-ant { background: var(--gris); }
+.b-act { background: var(--acento); }
+.b-proy { border: 1px dashed var(--tinta); border-bottom: none; display: flex; align-items: flex-end; }
+.b-proy > div { width: 100%; background: var(--acento); }
+.anual-nombres { display: flex; gap: 10px; }
+.anual-nombres div { flex: 1 1 0; min-width: 0; text-align: center; font-size: 12px; color: var(--tenue); }
+.sube-tx { color: var(--verde); font-weight: 600; } .baja-tx { color: var(--rojo); font-weight: 600; }
+
+/* Deuda por vencimiento */
+.venc { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; align-items: start; }
+.barra-apilada { display: flex; height: 22px; border-radius: 3px; overflow: hidden; }
+.tramo { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto 64px; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--pista); font-size: 14px; }
+.tramo .num { text-align: right; white-space: nowrap; }
+.destacados { display: flex; flex-direction: column; gap: 14px; }
+.destacados .valor { font-size: 28px; font-weight: 600; }
+
   </style>
 </head>
 <body>
@@ -159,17 +193,21 @@ td:last-child { font-weight: 600; }
   <!-- ====== CONFIGURACIÓN: links de las pestañas publicadas como CSV ====== -->
   <script>
 /* CONFIGURACIÓN DEL TABLERO
-   Pegá acá los links de las 3 pestañas publicadas como CSV
+   Links de las pestañas publicadas como CSV
    (Google Sheets → Archivo → Compartir → Publicar en la web → elegir la pestaña → "Valores separados por comas (.csv)").
-   Mientras algún link esté vacío, el tablero muestra los datos de ejemplo. */
+   El orden no importa: el tablero reconoce cada pestaña por sus encabezados. */
 window.TABLERO_CONFIG = {
   titulo: 'Tablero de Comando',
 
   csv: {
+    // Obligatorias
     diario: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz5nifBc-NTsGJmckvLZI1VwPZOgQSjM-FFCsXwpKpozHccIAsEqSIjIwNn4GDcxAIwTGn6Cil3K65/pub?gid=0&single=true&output=csv',
     balance: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz5nifBc-NTsGJmckvLZI1VwPZOgQSjM-FFCsXwpKpozHccIAsEqSIjIwNn4GDcxAIwTGn6Cil3K65/pub?gid=285403348&single=true&output=csv',
-    objetivos: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz5nifBc-NTsGJmckvLZI1VwPZOgQSjM-FFCsXwpKpozHccIAsEqSIjIwNn4GDcxAIwTGn6Cil3K65/pub?gid=673734435&single=true&output=csv'
-    // El orden no importa: el tablero reconoce cada pestaña por sus encabezados.
+    objetivos: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz5nifBc-NTsGJmckvLZI1VwPZOgQSjM-FFCsXwpKpozHccIAsEqSIjIwNn4GDcxAIwTGn6Cil3K65/pub?gid=673734435&single=true&output=csv',
+
+    // Opcionales: si quedan vacías, esas secciones no se muestran.
+    mensuales: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz5nifBc-NTsGJmckvLZI1VwPZOgQSjM-FFCsXwpKpozHccIAsEqSIjIwNn4GDcxAIwTGn6Cil3K65/pub?gid=56555410&single=true&output=csv',
+    vencimientos: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz5nifBc-NTsGJmckvLZI1VwPZOgQSjM-FFCsXwpKpozHccIAsEqSIjIwNn4GDcxAIwTGn6Cil3K65/pub?gid=332075885&single=true&output=csv'
   },
 
   // Cada cuántos minutos se vuelven a leer los datos con la página abierta.
@@ -375,6 +413,100 @@ window.TABLERO_CONFIG = {
     return out.sort(function (a, b) { return a.fecha.key < b.fecha.key ? -1 : a.fecha.key > b.fecha.key ? 1 : 0; });
   }
 
+  // VENTAS_MENSUALES: Mes | Venta  →  { "2025-10": 205300000, ... }
+  function leerMensuales(rows) {
+    var out = {};
+    if (!rows || !rows.length) return out;
+    var c = requireCols('VENTAS_MENSUALES', rows[0], {
+      mes: { alias: ['mes'], label: 'Mes', required: true },
+      venta: { alias: ['venta', 'ventas'], label: 'Venta', required: true }
+    });
+    rows.slice(1).forEach(function (r) {
+      var mes = parseMes(r[c.mes]), v = parseNum(r[c.venta]);
+      if (mes && v != null) out[mes] = v;
+    });
+    return out;
+  }
+
+  function etiquetaTramo(h) {
+    var t = String(h || '').trim();
+    if (/\d\s*$/.test(t) && !/d[ií]as\s*$/i.test(t)) t += ' días';
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+
+  /* DEUDA_VENCIMIENTOS: Fecha | <tramos...> | (Total opcional)
+     Los tramos se toman de los encabezados, en el orden de la planilla
+     (ej.: "Menos de 30 | 30 a 60 | Mas de 60"). Devuelve el último corte. */
+  function leerVencimientos(rows) {
+    if (!rows || !rows.length) return null;
+    var cf = requireCols('DEUDA_VENCIMIENTOS', rows[0], { fecha: { alias: ['fecha'], label: 'Fecha', required: true } }).fecha;
+    var tramos = [];
+    rows[0].forEach(function (h, i) {
+      var n = norm(h);
+      if (i === cf || !n || n.indexOf('total') === 0 || n.indexOf('observ') === 0) return;
+      tramos.push({ col: i, label: etiquetaTramo(h) });
+    });
+    if (!tramos.length) throw new Error('La pestaña DEUDA_VENCIMIENTOS no tiene columnas de tramos (por ejemplo: Menos de 30, 30 a 60, Mas de 60).');
+    var ultimo = null;
+    rows.slice(1).forEach(function (r) {
+      var f = parseDate(r[cf]);
+      if (!f) return;
+      var vals = [], alguno = false;
+      tramos.forEach(function (t) { var x = parseNum(r[t.col]); if (x != null) alguno = true; vals.push(x || 0); });
+      if (alguno && (!ultimo || f.key >= ultimo.fecha.key)) ultimo = { fecha: f, vals: vals };
+    });
+    if (!ultimo) return null;
+    var total = sum(ultimo.vals);
+    var lista = tramos.map(function (t, i) {
+      return { label: t.label, valor: ultimo.vals[i], pct: total ? ultimo.vals[i] / total : null, idx: i };
+    });
+    return { fecha: ultimo.fecha, total: total, tramos: lista, primero: lista[0], ultimo: lista[lista.length - 1] };
+  }
+
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  // Comparativo anual: meses cerrados desde VENTAS_MENSUALES, mes en curso desde DIARIO.
+  function calcularAnual(mensuales, mes, ventaAc, proyVenta) {
+    if (!mes) return null;
+    var y = +mes.split('-')[0], mActual = +mes.split('-')[1];
+    var hayAlgo = Object.keys(mensuales).some(function (k) { return +k.split('-')[0] === y || +k.split('-')[0] === y - 1; });
+    if (!hayAlgo) return null;
+    var meses = [], ytdAct = 0, ytdAnt = 0, cerrados = 0, crecen = 0, mejor = null;
+    for (var m = 1; m <= 12; m++) {
+      var kAct = y + '-' + pad2(m), kAnt = (y - 1) + '-' + pad2(m);
+      var ant = mensuales[kAnt] != null ? mensuales[kAnt] : null;
+      var item = { mes: m, nombre: MESES[m - 1], anterior: ant, actual: null, proyeccion: null, estado: 'futuro' };
+      if (m < mActual) {
+        item.actual = mensuales[kAct] != null ? mensuales[kAct] : null;
+        item.estado = item.actual != null ? 'cerrado' : 'sindatos';
+      } else if (m === mActual) {
+        item.actual = ventaAc;
+        item.proyeccion = proyVenta;
+        item.estado = 'encurso';
+      }
+      var comp = item.estado === 'cerrado' ? item.actual : item.estado === 'encurso' ? item.proyeccion : null;
+      item.variacion = comp != null && ant ? comp / ant - 1 : null;
+      if (item.estado === 'cerrado') {
+        if (ant != null) { ytdAct += item.actual; ytdAnt += ant; cerrados++; if (item.actual > ant) crecen++; }
+        if (!mejor || item.actual > mejor.actual) mejor = item;
+      }
+      meses.push(item);
+    }
+    var actualMes = meses[mActual - 1];
+    return {
+      anio: y,
+      meses: meses,
+      cerrados: cerrados,
+      ytdActual: ytdAct,
+      ytdAnterior: ytdAnt,
+      ytdVariacion: ytdAnt ? ytdAct / ytdAnt - 1 : null,
+      ultimoCerrado: cerrados ? MESES[mActual - 2] : null,
+      crecen: crecen,
+      mejor: mejor ? { nombre: mejor.nombre, valor: mejor.actual } : null,
+      mesActual: { nombre: MESES[mActual - 1], proyeccion: actualMes.proyeccion, anterior: actualMes.anterior, variacion: actualMes.variacion }
+    };
+  }
+
   function diasHabilesDelMes(mes) {
     var p = mes.split('-'), y = +p[0], m = +p[1], n = 0;
     var dias = new Date(Date.UTC(y, m, 0)).getUTCDate();
@@ -457,6 +589,20 @@ window.TABLERO_CONFIG = {
     // Último corte de balance (el de fecha más reciente).
     var bal = calcularBalance(balance[balance.length - 1]);
 
+    // Opcionales: ventas mensuales y deuda por vencimiento.
+    var avisos = [], anual = null, venc = null;
+    try {
+      if (tablas.mensuales) anual = calcularAnual(leerMensuales(tablas.mensuales), mes, ventaAc, promVenta != null ? promVenta * total : null);
+    } catch (e) { avisos.push(e.message); }
+    try {
+      if (tablas.vencimientos) venc = leerVencimientos(tablas.vencimientos);
+    } catch (e) { avisos.push(e.message); }
+    if (venc && bal && bal.calle) {
+      venc.difBalance = venc.total - bal.calle;
+      venc.coincide = Math.abs(venc.difBalance) <= Math.max(1, bal.calle * 0.005);
+      venc.mismaFecha = venc.fecha.key === bal.fecha.key;
+    }
+
     var ultimo = delMes[delMes.length - 1] || null;
     return {
       meses: meses,
@@ -482,7 +628,10 @@ window.TABLERO_CONFIG = {
       peFaltan: pe != null ? Math.max(pe - factAc, 0) : null,
       peAlcanzable: pe != null && proy != null ? proy >= pe : null,
       detalle: detalle,
-      balance: bal
+      balance: bal,
+      anual: anual,
+      vencimientos: venc,
+      avisos: avisos
     };
   }
 
@@ -492,8 +641,11 @@ window.TABLERO_CONFIG = {
     var h = rows[0].map(norm);
     function tiene(a) { return findCol(rows[0], a) > -1; }
     if (tiene(['mes']) && tiene(['objetivo facturacion', 'objetivo'])) return 'objetivos';
+    if (tiene(['mes']) && tiene(['venta', 'ventas'])) return 'mensuales';
     if (tiene(['fecha']) && tiene(['caja y bancos']) && tiene(['proveedores'])) return 'balance';
     if (tiene(['fecha']) && tiene(['venta']) && tiene(['facturacion'])) return 'diario';
+    // Deuda por vencimiento: Fecha + columnas de días (30, 60, 90...).
+    if (tiene(['fecha']) && h.filter(function (x) { return /\b(30|45|60|90)\b/.test(x); }).length >= 2) return 'vencimientos';
     if (h.join(' ').indexOf('planilla de carga') > -1) return 'instrucciones';
     return null;
   }
@@ -513,12 +665,15 @@ window.TABLERO_CONFIG = {
   var CFG = window.TABLERO_CONFIG || {};
   var C = window.TableroCalc;
   var app = document.getElementById('app');
-  var TABS = ['diario', 'balance', 'objetivos'];
-  var NOMBRES = { diario: 'DIARIO', balance: 'BALANCE', objetivos: 'OBJETIVOS' };
+  var TABS = ['diario', 'balance', 'objetivos'];           // obligatorias
+  var OPCIONALES = ['mensuales', 'vencimientos'];           // se muestran solo si tienen link
+  var NOMBRES = { diario: 'DIARIO', balance: 'BALANCE', objetivos: 'OBJETIVOS',
+    mensuales: 'VENTAS_MENSUALES', vencimientos: 'DEUDA_VENCIMIENTOS' };
 
   var urls = CFG.csv || {};
   var demo = TABS.some(function (t) { return !urls[t]; });
-  var estado = { tablas: null, mes: null, leido: null, error: null };
+  var SLOTS = TABS.concat(OPCIONALES.filter(function (t) { return demo || urls[t]; }));
+  var estado = { tablas: null, mes: null, leido: null, error: null, avisos: [] };
 
   // ---------- Formato ----------
   var nf1 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -566,25 +721,36 @@ window.TABLERO_CONFIG = {
   function asignar(res) {
     var tablas = {}, raros = [];
     res.forEach(function (rows, i) {
+      if (!rows) return; // pestaña opcional que no se pudo leer
       var tipo = C.identificar(rows);
       if (tipo && tipo !== 'instrucciones' && !tablas[tipo]) tablas[tipo] = rows;
-      else raros.push({ slot: TABS[i], tipo: tipo });
+      else raros.push({ slot: SLOTS[i], tipo: tipo });
     });
     var faltan = TABS.filter(function (t) { return !tablas[t]; });
+    var detalle = raros.map(function (r) {
+      return 'el link cargado como "' + r.slot + '" ' +
+        (r.tipo === 'instrucciones' ? 'corresponde a la pestaña INSTRUCCIONES'
+          : r.tipo ? 'repite la pestaña ' + NOMBRES[r.tipo] : 'no tiene los encabezados esperados');
+    }).join('; ');
     if (faltan.length) {
-      var detalle = raros.map(function (r) {
-        return 'el link cargado como "' + r.slot + '" ' +
-          (r.tipo === 'instrucciones' ? 'corresponde a la pestaña INSTRUCCIONES'
-            : r.tipo ? 'repite la pestaña ' + NOMBRES[r.tipo] : 'no tiene los encabezados esperados');
-      }).join('; ');
       throw new Error('Falta la pestaña ' + faltan.map(function (t) { return NOMBRES[t]; }).join(', ') +
-        '. Revisá los links en config.js: ' + detalle + '.');
+        '. Revisá los links en config.js' + (detalle ? ': ' + detalle : '') + '.');
     }
+    OPCIONALES.forEach(function (t) {
+      if (SLOTS.indexOf(t) > -1 && !tablas[t]) {
+        estado.avisos.push('No se encontró la pestaña ' + NOMBRES[t] + (detalle ? ' (' + detalle + ')' : '') + '.');
+      }
+    });
     return tablas;
   }
 
   function cargar() {
-    return Promise.all(TABS.map(leerTab)).then(function (res) {
+    estado.avisos = [];
+    return Promise.all(SLOTS.map(function (t) {
+      var p = leerTab(t);
+      // Las pestañas opcionales no frenan el tablero si fallan.
+      return TABS.indexOf(t) > -1 ? p : p.catch(function (e) { estado.avisos.push(e.message); return null; });
+    })).then(function (res) {
       estado.tablas = asignar(res);
       estado.leido = new Date();
       estado.error = null;
@@ -731,6 +897,84 @@ window.TABLERO_CONFIG = {
         filas + '</tbody></table></div>' : '<p class="vacio">Sin días cargados en este mes.</p>') + '</section>';
   }
 
+  function seccionAnual(a, m) {
+    var max = 1;
+    a.meses.forEach(function (x) { max = Math.max(max, x.anterior || 0, x.actual || 0, x.proyeccion || 0); });
+    max *= 1.05;
+    function h(v) { return (v / max * 100).toFixed(1) + '%'; }
+    var barras = a.meses.map(function (x) {
+      var nombre = x.nombre;
+      var tAnt = nombre + ' ' + (a.anio - 1) + ': ' + (x.anterior != null ? M(x.anterior) : 'sin dato');
+      var ant = x.anterior != null ? '<div class="b-ant" style="height:' + h(x.anterior) + '" title="' + esc(tAnt) + '"></div>' : '<div></div>';
+      var act = '<div></div>';
+      if (x.estado === 'cerrado') {
+        act = '<div class="b-act" style="height:' + h(x.actual) + '" title="' + esc(nombre + ' ' + a.anio + ': ' + M(x.actual)) + '"></div>';
+      } else if (x.estado === 'encurso' && x.proyeccion != null) {
+        act = '<div class="b-proy" style="height:' + h(x.proyeccion) + '" title="' +
+          esc(nombre + ' ' + a.anio + ': ' + M(x.actual) + ' al día ' + m.dia + ' · proyección ' + M(x.proyeccion)) + '">' +
+          '<div style="height:' + (x.proyeccion ? clamp(x.actual / x.proyeccion * 100) : 0).toFixed(1) + '%"></div></div>';
+      }
+      var cls = x.variacion == null ? '' : x.variacion >= 0 ? ' sube' : ' baja';
+      return '<div class="anual-mes"><div class="num anual-var' + cls + '">' + (x.variacion == null ? '' : VAR(x.variacion)) + '</div>' +
+        '<div class="anual-par">' + ant + act + '</div></div>';
+    }).join('');
+    var nombres = a.meses.map(function (x) { return '<div>' + esc(x.nombre.slice(0, 3)) + '</div>'; }).join('');
+    function txVar(v) { return v == null ? '—' : '<span class="' + (v >= 0 ? 'sube-tx' : 'baja-tx') + '">' + VAR(v) + '</span>'; }
+    var ma = a.mesActual;
+    return '<section class="tarjeta" aria-labelledby="t-anual">' +
+      '<div class="titulo-fila"><h2 id="t-anual">Ventas por mes vs. año anterior</h2>' +
+        '<div class="leyenda-anual"><span><i class="sw" style="background:var(--gris)"></i>' + (a.anio - 1) + '</span>' +
+        '<span><i class="sw" style="background:var(--acento)"></i>' + a.anio + '</span>' +
+        '<span><i class="sw sw-proy"></i>Proyección del mes en curso</span></div></div>' +
+      '<div class="resumenes">' +
+        '<div class="stat"><div class="etq">Acumulado del año' + (a.ultimoCerrado ? ' (Ene–' + esc(a.ultimoCerrado.slice(0, 3)) + ', meses cerrados)' : '') + '</div>' +
+          '<div class="num valor">' + M(a.ytdActual) + '</div><div class="num sub">vs. ' + M(a.ytdAnterior) + ' · ' + txVar(a.ytdVariacion) + '</div></div>' +
+        '<div class="stat"><div class="etq">' + esc(ma.nombre) + ' en curso (proyección)</div>' +
+          '<div class="num valor">' + M(ma.proyeccion) + '</div><div class="num sub">vs. ' + M(ma.anterior) + ' en ' + (a.anio - 1) + ' · ' + txVar(ma.variacion) + '</div></div>' +
+        '<div class="stat"><div class="etq">Meses que crecieron</div>' +
+          '<div class="num valor">' + a.crecen + ' de ' + a.cerrados + '</div><div class="num sub">' +
+          (a.mejor ? 'Mejor mes: ' + esc(a.mejor.nombre) + ' ' + M(a.mejor.valor) : '—') + '</div></div>' +
+      '</div>' +
+      '<div class="scroll-x"><div class="anual"><div class="anual-barras" role="img" aria-label="Venta mensual de ' + a.anio + ' comparada con ' + (a.anio - 1) + '">' +
+        barras + '</div><div class="anual-nombres">' + nombres + '</div></div></div>' +
+      '<div class="sub" style="font-size:12px">Variación interanual en pesos nominales. Pasá el cursor sobre cada barra para ver el importe.</div>' +
+      '</section>';
+  }
+
+  function seccionVencimientos(v) {
+    var paleta = ['var(--v0)', 'var(--v1)', 'var(--v2)', 'var(--v3)', 'var(--v4)'];
+    var n = v.tramos.length;
+    function color(i) { return n === 1 ? paleta[0] : paleta[Math.round(i * (paleta.length - 1) / (n - 1))]; }
+    var seg = v.tramos.map(function (t) {
+      return '<div style="width:' + (v.total ? t.valor / v.total * 100 : 0).toFixed(2) + '%;background:' + color(t.idx) + '" title="' + esc(t.label + ': ' + M(t.valor)) + '"></div>';
+    }).join('');
+    var filas = v.tramos.map(function (t) {
+      return '<div class="tramo"><i class="sw" style="background:' + color(t.idx) + '"></i><span>' + esc(t.label) +
+        '</span><span class="num">' + M(t.valor) + '</span><span class="num sub">' + P(t.pct) + '</span></div>';
+    }).join('');
+    var aviso = '';
+    if (v.coincide === false) {
+      aviso = '<div class="aviso info" style="font-size:13px;padding:10px 14px">La suma por vencimiento (' + M(v.total) +
+        ') no coincide con Cuentas a cobrar del balance (' + M(v.total - v.difBalance) + ')' +
+        (v.mismaFecha ? '' : '; los cortes son de fechas distintas') + '.</div>';
+    }
+    var dest = n > 1 ?
+      '<div class="par" style="gap:16px"><div><div class="etq">' + esc(v.primero.label) + '</div><div class="num valor" style="font-size:22px">' + M(v.primero.valor) +
+        '</div><div class="num sub">' + P(v.primero.pct) + ' del total</div></div>' +
+      '<div><div class="etq">' + esc(v.ultimo.label) + '</div><div class="num valor negativo" style="font-size:22px">' + M(v.ultimo.valor) +
+        '</div><div class="num sub">' + P(v.ultimo.pct) + ' del total</div></div></div>' : '';
+    return '<section class="tarjeta" aria-labelledby="t-venc">' +
+      '<div class="titulo-fila"><h2 id="t-venc">Deuda en la calle por antigüedad</h2><span class="sub">Al ' + F(v.fecha, true) + '</span></div>' +
+      '<div class="venc">' +
+        '<div class="destacados">' +
+          '<div><div class="etq">Total deuda en la calle</div><div class="num valor">' + M(v.total) + '</div></div>' +
+          '<div class="barra-apilada" role="img" aria-label="Distribución de la deuda por tramo">' + seg + '</div>' +
+          dest + aviso +
+        '</div>' +
+        '<div>' + filas + '</div>' +
+      '</div></section>';
+  }
+
   function dibujar() {
     var html = '', m = null;
     if (estado.tablas) {
@@ -746,14 +990,20 @@ window.TABLERO_CONFIG = {
       html += '<div class="aviso error" role="alert"><strong>No se pudieron mostrar los datos.</strong> ' + esc(estado.error) +
         (m ? '<br>Se muestran los últimos datos leídos.' : '') + '</div>';
     }
+    var avisos = estado.avisos.concat(m && m.avisos ? m.avisos : []);
+    if (avisos.length) {
+      html += '<div class="aviso info">' + avisos.map(esc).join('<br>') + '</div>';
+    }
     if (m && !m.mes) {
       html += '<div class="aviso info">La pestaña DIARIO todavía no tiene días cargados.</div>';
     }
     if (m && m.mes) {
       html += seccionObjetivo(m);
       html += '<div class="grilla-2">' + tarjetaSerie('Venta', m.venta, m) + tarjetaSerie('Facturación', m.facturacion, m) + '</div>';
+      if (m.anual) html += seccionAnual(m.anual, m);
     }
     if (m) html += seccionBalance(m.balance);
+    if (m && m.vencimientos) html += seccionVencimientos(m.vencimientos);
     if (m && m.mes) html += seccionDetalle(m);
     html += '<footer class="pie"><span>Fuente: Google Sheet' + (estado.leido ? ' · leído a las ' + hora(estado.leido) : '') +
       '</span><span>Importes en millones de pesos</span></footer>';
@@ -772,7 +1022,6 @@ window.TABLERO_CONFIG = {
 
   </script>
   <script>
-    // Si algo impidió que el tablero arranque, mostrarlo en vez de quedar en "Cargando".
     setTimeout(function () {
       var el = document.querySelector('#app .cargando');
       if (el) el.outerHTML = '<div class="aviso error" role="alert"><strong>El tablero no pudo iniciar.</strong> Recargá la página; si sigue igual, avisá al administrador.</div>';
