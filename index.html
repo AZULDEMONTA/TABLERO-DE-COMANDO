@@ -764,11 +764,8 @@ window.TABLERO_CONFIG = {
     });
   }
   function pc(f) { return Math.max(0, Math.min(100, (f || 0) * 100)); }
-  // Importe completo, mismo formato que VentasTrack: $265.722.552
-  function fmt(n) {
-    if (n == null || !isFinite(n)) return '—';
-    return (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString('es-AR');
-  }
+  // Importes en millones con un decimal: $101.500.000 → $101,5M
+  function fmt(n) { return M(n); }
 
   // ---------- Lectura ----------
   function leer(f) {
