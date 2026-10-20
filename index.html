@@ -371,15 +371,18 @@ window.TABLERO_CONFIG = {
   }
 
   // Facturación: Mes | Año | Facturado | Facturable  →  { "2026-10": facturado }
+  /* Facturación: Mes | Año | Facturado | Facturable.
+     La facturación del mes es Facturado + Facturable (el facturable solo tiene valor en el mes vigente). */
   function leerFacturacion(rows, anioPorDefecto) {
-    var out = {};
+    var out = { total: {}, facturado: {}, facturable: {} };
     if (!rows || !rows.length) return out;
-    var h = rows[0], cM = -1, cA = -1, cF = -1;
+    var h = rows[0], cM = -1, cA = -1, cF = -1, cL = -1;
     h.forEach(function (x, i) {
       var n = norm(x);
       if (esColAnio(x)) cA = i;
       else if (cM < 0 && /^(mes|month)/.test(n)) cM = i;
-      else if (cF < 0 && /(facturado|billed)/.test(n) && !/(facturable|billable)/.test(n)) cF = i;
+      else if (cL < 0 && /(facturable|billable)/.test(n)) cL = i;
+      else if (cF < 0 && /(facturado|billed)/.test(n)) cF = i;
     });
     if (cM < 0) falta('Facturación (VentasTrack)', 'Mes');
     if (cF < 0) falta('Facturación (VentasTrack)', 'Facturado');
@@ -388,9 +391,12 @@ window.TABLERO_CONFIG = {
       if (mi < 0) return;
       var y = cA > -1 ? parseInt(String(r[cA] || '').replace(/[^\d]/g, ''), 10) : NaN;
       if (!y) y = anioPorDefecto;
-      var v = parseAmt(r[cF]);
-      if (v == null) return; // celda vacía: mes sin dato
-      out[y + '-' + pad(mi + 1)] = v;
+      var fa = parseAmt(r[cF]), fl = cL > -1 ? parseAmt(r[cL]) : null;
+      if (fa == null && fl == null) return; // celdas vacías: mes sin dato
+      var k = y + '-' + pad(mi + 1);
+      out.facturado[k] = fa || 0;
+      out.facturable[k] = fl || 0;
+      out.total[k] = (fa || 0) + (fl || 0);
     });
     return out;
   }
@@ -541,7 +547,7 @@ window.TABLERO_CONFIG = {
 
     var ventas = leerVentas(t.ventas);
     var objetivos = leerObjetivos(t.objetivos, anioHoy);
-    var fact = leerFacturacion(t.facturacion, anioHoy);
+    var factT = leerFacturacion(t.facturacion, anioHoy), fact = factT.total;
     var feriados = {};
     try { feriados = leerFeriados(t.feriados); } catch (e) { avisos.push(e.message); }
     var equilibrio = {};
@@ -576,8 +582,9 @@ window.TABLERO_CONFIG = {
 
     var factAc = fact[mes] != null ? fact[mes] : null;
     var venta = indicadores(ventaAc, objetivo, avanceMes, transc, total);
-    venta.dia = ventaDia;
+    venta.dia = esUltimo ? ventaDia : 0; // en períodos anteriores no hay "venta del día"
     var facturacion = indicadores(factAc, objetivo, avanceMes, transc, total);
+    if (facturacion) { facturacion.facturado = factT.facturado[mes] || 0; facturacion.facturable = factT.facturable[mes] || 0; }
     if (facturacion && pe) {
       facturacion.peFaltan = Math.max(pe - factAc, 0);
       facturacion.peAlcanzable = facturacion.proyeccion != null ? facturacion.proyeccion >= pe : null;
@@ -777,6 +784,7 @@ window.TABLERO_CONFIG = {
     }
     html += '</div><div class="fila">' +
       '<div class="col-grande"><span class="rot">Facturación acumulada</span><span class="num n52">' + M(f.acumulado) + '</span>' +
+      (f.facturable ? '<span class="sub" style="font-size:14px">Facturado ' + M(f.facturado) + ' + facturable ' + M(f.facturable) + '</span>' : '') +
       '<span class="sub" style="font-size:14px">Proyección al cierre ' + M(f.proyeccion) + '</span></div>' +
       '<div class="col-div"><span class="rot">Objetivo</span><span class="num n26">' + M(d.objetivo) + '</span><span class="sub">' + (d.objetivo ? 'Faltan ' + M(f.faltan) : '—') + '</span></div>' +
       '<div class="col-div"><span class="rot pe">Punto de equilibrio</span><span class="num n26 pe">' + M(d.pe) + '</span><span class="sub">' + (d.pe ? (f.peFaltan > 0 ? 'Faltan ' + M(f.peFaltan) : 'Cubierto') : '—') + '</span></div>' +
