@@ -980,10 +980,6 @@ window.TABLERO_CONFIG = {
       (b ? '<span class="nota">Saldos al ' + F(b.fecha, true) + '</span>' : '') + '</div>';
     if (!b) return html + '<div class="tarjeta"><p class="vacio" style="margin:0">No hay datos en la pestaña BALANCE.</p></div></section>';
 
-    html += '<div class="fila">' +
-      '<div class="mini"><span class="rot">Stock a valor compra</span><span class="num n30">' + M(b.stock) + '</span></div>' +
-      '<div class="mini"><span class="rot">Deuda en la calle</span><span class="num n30">' + M(b.calle) + '</span></div>' +
-      '<div class="mini"><span class="rot">Deuda con proveedores</span><span class="num n30">' + M(b.proveedores) + '</span></div></div>';
 
     if (v) {
       var n = v.tramos.length;
