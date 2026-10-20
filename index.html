@@ -133,6 +133,48 @@ h1, h2, h3 { margin: 0; }
 .vacio { font-size: 14px; color: var(--tenue); }
 .pie { font-family: var(--mono); font-size: 12px; color: var(--tenue); text-align: center; }
 
+/* Bloques con el formato de VentasTrack */
+:root { --vendido: #7AA2FF; --facturado: #C6F432; --facturable: #B794F6; }
+.c-ok { color: var(--acento); }
+.c-warn { color: var(--ambar); }
+.c-bad { color: var(--coral); }
+.c-mes { color: var(--vendido); }
+.relleno.c-ok { background: var(--acento); }
+.relleno.c-warn { background: var(--ambar); }
+.relleno.c-bad { background: var(--coral); }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.k { background: var(--suave); border: 1px solid var(--borde); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.k.b-ok { border-color: rgba(198, 244, 50, .35); }
+.k.b-bad { border-color: rgba(255, 138, 122, .4); }
+.k.k-ancho { grid-column: span 2; }
+.k-rot { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--tenue); }
+.k-val { font-family: var(--mono); font-size: 22px; font-weight: 500; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-val.pe { color: var(--ambar); }
+.k-sub { font-size: 12px; color: var(--tenue); }
+.avance { background: var(--suave); border: 1px solid var(--borde); border-radius: 6px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.avance .titulo-sec b { font-size: 15px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--tenue); }
+.chips b { font-family: var(--mono); font-weight: 500; color: var(--tinta); }
+.chips b.c-ok { color: var(--acento); } .chips b.c-warn { color: var(--ambar); } .chips b.c-bad { color: var(--coral); }
+.composicion { display: flex; height: 12px; border-radius: 2px; overflow: hidden; gap: 2px; background: var(--pista); }
+.bf { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.bf > div { background: var(--suave); border-radius: 6px; border-left: 3px solid; padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; }
+.vend { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; }
+.v { background: var(--suave); border: 1px solid var(--borde); border-left: 3px solid; border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.v-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.v-cab > div:first-child { display: flex; flex-direction: column; gap: 2px; }
+.v-der { display: flex; align-items: center; gap: 12px; text-align: right; }
+.infl { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 13px; color: var(--tenue); }
+.infl input { width: 76px; font: inherit; color: var(--tinta); background: var(--suave); border: 1px solid var(--acento); border-radius: 6px; padding: 8px 10px; min-height: 40px; text-align: right; }
+.graf3 .mes { gap: 2px; }
+.graf3 .b, .graf3 .pila { width: 28%; }
+.graf .b.aj { background: var(--ambar); }
+.graf .vars em { flex: 0 0 64px; font-style: normal; font-size: 11px; color: var(--tenue); text-align: left; }
+.graf .vars { padding-left: 0; }
+.graf3 .etis { padding-left: 76px; }
+.graf3 .barras { padding-left: 76px; }
+@media (max-width: 640px) { .k.k-ancho { grid-column: auto; } .vend { grid-template-columns: 1fr; } }
+
 @media (max-width: 640px) {
   .tarjeta { padding: 20px; }
   .n52 { font-size: 44px; }
@@ -167,6 +209,10 @@ window.TABLERO_CONFIG = {
 
   // Punto de equilibrio mensual, si no figura en la planilla para ese mes.
   puntoEquilibrio: 260000000,
+
+  // Inflación para ajustar el año anterior en la comparativa (30 = 30%).
+  // También se puede cambiar desde el mismo gráfico; ese valor queda guardado en el navegador.
+  inflacion: 30,
 
   // Cada cuántos minutos se vuelven a leer los datos con la página abierta.
   refrescoMinutos: 5
@@ -346,9 +392,9 @@ window.TABLERO_CONFIG = {
     return out;
   }
 
-  // Objetivos: Vendedor | Año | Enero | Febrero | ...  →  { "2026-10": suma de todos los vendedores }
+  // Objetivos: Vendedor | Año | Enero | Febrero | ...  →  objetivo por vendedor y por mes ("2026-10")
   function leerObjetivos(rows, anioPorDefecto) {
-    var out = {};
+    var out = { vendedores: [], porVendedor: {} };
     if (!rows || !rows.length) return out;
     var h = rows[0], cV = findCol(h, ['vendedor', 'seller']), cA = -1, cols = [];
     if (cV < 0) falta('Objetivos (VentasTrack)', 'Vendedor');
@@ -359,18 +405,20 @@ window.TABLERO_CONFIG = {
       if (mi > -1) cols.push({ i: i, m: mi });
     });
     rows.slice(1).forEach(function (r) {
-      if (!String(r[cV] || '').trim()) return;
+      var vend = String(r[cV] || '').trim();
+      if (!vend) return;
       var y = cA > -1 ? parseInt(String(r[cA] || '').replace(/[^\d]/g, ''), 10) : NaN;
       if (!y) y = anioPorDefecto;
+      if (out.vendedores.indexOf(vend) < 0) out.vendedores.push(vend);
+      if (!out.porVendedor[vend]) out.porVendedor[vend] = {};
       cols.forEach(function (c) {
         var v = parseAmt(r[c.i]);
-        if (v > 0) { var k = y + '-' + pad(c.m + 1); out[k] = (out[k] || 0) + v; }
+        if (v > 0) out.porVendedor[vend][y + '-' + pad(c.m + 1)] = v;
       });
     });
     return out;
   }
 
-  // Facturación: Mes | Año | Facturado | Facturable  →  { "2026-10": facturado }
   /* Facturación: Mes | Año | Facturado | Facturable.
      La facturación del mes es Facturado + Facturable (el facturable solo tiene valor en el mes vigente). */
   function leerFacturacion(rows, anioPorDefecto) {
@@ -519,95 +567,121 @@ window.TABLERO_CONFIG = {
     return out;
   }
 
-  /* ---------- Indicadores de un importe acumulado contra el objetivo y el avance del mes ---------- */
-  function indicadores(ac, objetivo, avanceMes, transc, total) {
-    if (ac == null) return null;
-    var r = { acumulado: ac };
-    r.promedio = transc ? ac / transc : null;
-    r.proyeccion = transc ? ac / transc * total : null;
-    if (objetivo) {
-      r.pctObjetivo = ac / objetivo;
-      r.esperado = objetivo * avanceMes;
-      r.desvio = ac - r.esperado;
-      r.desvioPp = r.pctObjetivo - avanceMes;
-      r.ritmo = r.esperado ? ac / r.esperado : null;
-      r.faltan = Math.max(objetivo - ac, 0);
-      r.necesarioDia = total - transc > 0 ? r.faltan / (total - transc) : null;
-      r.pctProyeccion = r.proyeccion != null ? r.proyeccion / objetivo : null;
-    }
-    return r;
-  }
+  // Porcentaje entero, igual que VentasTrack: pct(12, 50) = 24
+  function pct(v, g) { return g ? Math.round(v / g * 100) : 0; }
 
-  /* Arma el modelo completo para un mes "aaaa-mm" (por defecto, el último con ventas). */
+  /* Arma el modelo completo para un mes "aaaa-mm".
+     Misma lógica que VentasTrack:
+     - Solo entran los vendedores con objetivo cargado en el mes.
+     - Días hábiles: lunes a viernes menos feriados; en el mes en curso se cuentan hasta hoy.
+     - Avance = % del objetivo vs % de días hábiles transcurridos (en enteros).
+     - Backorder = vendido − (facturado + facturable). */
   function calcular(t, mesPedido, opciones) {
     opciones = opciones || {};
     var hoy = opciones.hoy || new Date();
     var anioHoy = hoy.getFullYear();
+    var mesHoy = anioHoy + '-' + pad(hoy.getMonth() + 1);
     var avisos = [];
 
     var ventas = leerVentas(t.ventas);
-    var objetivos = leerObjetivos(t.objetivos, anioHoy);
-    var factT = leerFacturacion(t.facturacion, anioHoy), fact = factT.total;
+    var obj = leerObjetivos(t.objetivos, anioHoy);
+    var factT = leerFacturacion(t.facturacion, anioHoy);
     var feriados = {};
     try { feriados = leerFeriados(t.feriados); } catch (e) { avisos.push(e.message); }
     var equilibrio = {};
     try { equilibrio = leerEquilibrio(t.equilibrio); } catch (e) { avisos.push(e.message); }
 
-    var meses = [];
+    var meses = [mesHoy];
     ventas.forEach(function (v) { if (meses.indexOf(v.fecha.mes) < 0) meses.push(v.fecha.mes); });
     meses.sort().reverse();
-    var mes = mesPedido && meses.indexOf(mesPedido) > -1 ? mesPedido : meses[0] || null;
-    if (!mes) {
-      var h = hoy.getFullYear() + '-' + pad(hoy.getMonth() + 1);
-      mes = h; meses = [h];
-    }
+    var mes = mesPedido && meses.indexOf(mesPedido) > -1 ? mesPedido : mesHoy;
+    var esActual = mes === mesHoy;
+    var y = +mes.split('-')[0], mAct = +mes.split('-')[1];
 
-    var dHab = habiles(mes, feriados), total = dHab.length;
+    // Días hábiles
+    var dHab = habiles(mes, feriados), twd = dHab.length;
+    var hastaDia = esActual ? hoy.getDate() : diasDelMes(mes);
+    var elWD = dHab.filter(function (d) { return d <= hastaDia; }).length;
+    var remWD = twd - elWD;
+    var mthPct = pct(elWD, twd);
+
+    // Vendedores con objetivo en el mes
     var delMes = ventas.filter(function (v) { return v.fecha.mes === mes; });
+    var vendedores = obj.vendedores.filter(function (s) { return (obj.porVendedor[s][mes] || 0) > 0; }).map(function (s, i) {
+      var vs = delMes.filter(function (v) { return v.vendedor === s; });
+      var total = sum(vs.map(function (v) { return v.importe; }));
+      var goal = obj.porVendedor[s][mes];
+      var gap = goal - total;
+      var exp = twd ? Math.round(goal / twd * elWD) : 0;
+      return {
+        vendedor: s, idx: i, total: total, goal: goal, p: pct(total, goal), gap: gap,
+        diff: pct(total, goal) - mthPct, vsExp: total - exp,
+        dailyAvg: elWD ? Math.round(total / elWD) : 0,
+        dailyNeed: remWD ? Math.round(Math.max(0, gap) / remWD) : 0
+      };
+    });
+    if (!vendedores.length) avisos.push('No hay objetivos cargados en VentasTrack para ' + MESES[mAct - 1] + ' ' + y + '.');
+    var activos = {};
+    vendedores.forEach(function (r) { activos[r.vendedor] = true; });
+    var ventasActivas = delMes.filter(function (v) { return activos[v.vendedor]; });
+    var sinObjetivo = sum(delMes.filter(function (v) { return !activos[v.vendedor]; }).map(function (v) { return v.importe; }));
+    if (sinObjetivo) avisos.push('Hay ventas por ' + Math.round(sinObjetivo).toLocaleString('es-AR') + ' de vendedores sin objetivo en el mes: no se suman, igual que en VentasTrack.');
+
+    // Empresa
+    var tv = sum(vendedores.map(function (r) { return r.total; }));
+    var tg = sum(vendedores.map(function (r) { return r.goal; }));
+    var tp = pct(tv, tg), tgap = tg - tv;
     var ultima = null;
-    delMes.forEach(function (v) { if (!ultima || v.fecha.key > ultima.key) ultima = v.fecha; });
+    ventasActivas.forEach(function (v) { if (!ultima || v.fecha.key > ultima.key) ultima = v.fecha; });
+    var ventaDia = esActual && ultima ? sum(ventasActivas.filter(function (v) { return v.fecha.key === ultima.key; }).map(function (v) { return v.importe; })) : 0;
+    var empresa = {
+      total: tv, objetivo: tg, p: tp, diff: tp - mthPct, gap: tgap,
+      ventaDia: ventaDia, fechaDia: esActual ? ultima : null,
+      dailyAvg: elWD ? Math.round(tv / elWD) : 0,
+      dailyNeed: tg && remWD ? Math.round(Math.max(0, tgap) / remWD) : 0,
+      vsExp: tv - (tg && twd ? Math.round(tg / twd * elWD) : 0),
+      proyeccion: elWD ? Math.round(tv / elWD * twd) : null
+    };
 
-    // Corte: el mes más reciente se mide hasta la última fecha con ventas; los anteriores, completos.
-    var esUltimo = mes === meses[0];
-    var corteDia = esUltimo && ultima ? ultima.d : diasDelMes(mes);
-    var transc = dHab.filter(function (d) { return d <= corteDia; }).length;
-    var avanceMes = total ? transc / total : 0;
-
-    var ventaAc = sum(delMes.map(function (v) { return v.importe; }));
-    var ventaDia = ultima ? sum(delMes.filter(function (v) { return v.fecha.key === ultima.key; }).map(function (v) { return v.importe; })) : null;
-
-    var objetivo = objetivos[mes] || null;
-    if (!objetivo) avisos.push('No hay objetivos cargados en VentasTrack para ' + MESES[+mes.split('-')[1] - 1] + ' ' + mes.split('-')[0] + '.');
+    // Facturación: facturado + facturable; backorder = vendido − facturación
+    var billed = factT.facturado[mes] || 0, billable = factT.facturable[mes] || 0;
+    var fTotal = billed + billable;
+    var backorder = tv - fTotal;
     var pe = equilibrio[mes] || opciones.puntoEquilibrio || null;
+    var facturacion = {
+      facturado: billed, facturable: billable, total: fTotal, hayDato: factT.total[mes] != null,
+      backorder: backorder, boPct: pct(Math.max(0, backorder), tv),
+      pFacturado: pct(billed, tv), pFacturable: pct(billable, tv),
+      p: pct(fTotal, tg), diff: pct(fTotal, tg) - mthPct, gap: tg - fTotal,
+      vsExp: fTotal - (tg && twd ? Math.round(tg / twd * elWD) : 0),
+      dailyAvg: elWD ? Math.round(fTotal / elWD) : 0,
+      dailyNeed: tg && remWD ? Math.round(Math.max(0, tg - fTotal) / remWD) : 0,
+      proyeccion: elWD ? Math.round(fTotal / elWD * twd) : null,
+      pe: pe, peFaltan: pe ? Math.max(pe - fTotal, 0) : null
+    };
+    facturacion.peAlcanzable = pe && facturacion.proyeccion != null ? facturacion.proyeccion >= pe : null;
 
-    var factAc = fact[mes] != null ? fact[mes] : null;
-    var venta = indicadores(ventaAc, objetivo, avanceMes, transc, total);
-    venta.dia = esUltimo ? ventaDia : 0; // en períodos anteriores no hay "venta del día"
-    var facturacion = indicadores(factAc, objetivo, avanceMes, transc, total);
-    if (facturacion) { facturacion.facturado = factT.facturado[mes] || 0; facturacion.facturable = factT.facturable[mes] || 0; }
-    if (facturacion && pe) {
-      facturacion.peFaltan = Math.max(pe - factAc, 0);
-      facturacion.peAlcanzable = facturacion.proyeccion != null ? facturacion.proyeccion >= pe : null;
-    }
-
-    // Comparativa anual de facturación: año del mes elegido contra el anterior.
-    var y = +mes.split('-')[0], mAct = +mes.split('-')[1], anual = [], ytdA = 0, ytdP = 0, maxV = 0;
+    // Comparativa anual: año anterior, año anterior ajustado por inflación y año actual
+    var infl = opciones.inflacion != null && isFinite(opciones.inflacion) ? opciones.inflacion : 0;
+    var anual = [], maxV = 0, tot = { act: 0, ant: 0, aj: 0, n: 0 };
     for (var m = 1; m <= 12; m++) {
       var kA = y + '-' + pad(m), kP = (y - 1) + '-' + pad(m);
-      var it = { mes: m, corto: MESES_CORTO[m - 1], nombre: MESES[m - 1],
-        anterior: fact[kP] != null ? fact[kP] : null, actual: null, proyeccion: null, estado: 'futuro' };
-      if (m < mAct || (m === mAct && !esUltimo)) {
-        it.actual = fact[kA] != null ? fact[kA] : null;
+      var ant = factT.total[kP] != null ? factT.total[kP] : null;
+      var it = { mes: m, corto: MESES_CORTO[m - 1], nombre: MESES[m - 1], anterior: ant,
+        ajustado: ant != null ? Math.round(ant * (1 + infl)) : null, actual: null, proyeccion: null, estado: 'futuro' };
+      if (m < mAct || (m === mAct && !esActual)) {
+        it.actual = factT.total[kA] != null ? factT.total[kA] : null;
         it.estado = it.actual != null ? 'cerrado' : 'sindatos';
       } else if (m === mAct) {
-        it.actual = factAc;
-        it.proyeccion = facturacion ? facturacion.proyeccion : null;
+        it.actual = facturacion.hayDato ? fTotal : null;
+        it.proyeccion = facturacion.hayDato ? facturacion.proyeccion : null;
         it.estado = 'encurso';
       }
       var comp = it.estado === 'cerrado' ? it.actual : it.estado === 'encurso' ? it.proyeccion : null;
-      it.variacion = comp != null && it.anterior ? comp / it.anterior - 1 : null;
-      if (it.estado === 'cerrado' && it.anterior != null) { ytdA += it.actual; ytdP += it.anterior; }
-      [it.anterior, it.actual, it.proyeccion].forEach(function (v) { if (v != null && v > maxV) maxV = v; });
+      it.varNominal = comp != null && it.anterior ? comp / it.anterior - 1 : null;
+      it.varReal = comp != null && it.ajustado ? comp / it.ajustado - 1 : null;
+      if (it.estado === 'cerrado' && it.anterior != null) { tot.act += it.actual; tot.ant += it.anterior; tot.aj += it.ajustado; tot.n++; }
+      [it.anterior, it.ajustado, it.actual, it.proyeccion].forEach(function (v) { if (v != null && v > maxV) maxV = v; });
       anual.push(it);
     }
     var hayAnterior = anual.some(function (x) { return x.anterior != null; });
@@ -622,14 +696,13 @@ window.TABLERO_CONFIG = {
     }
 
     return {
-      meses: meses, mes: mes, esUltimo: esUltimo,
-      mesNombre: MESES[mAct - 1] + ' ' + y,
-      corte: ultima ? (esUltimo ? ultima : mkDate(y, mAct, diasDelMes(mes))) : null,
-      totalDias: total, transcurridos: transc, avanceMes: avanceMes,
-      objetivo: objetivo, pe: pe,
-      venta: venta, facturacion: facturacion,
-      anual: { anio: y, meses: anual, max: maxV, hayAnterior: hayAnterior,
-        ytdActual: ytdA, ytdAnterior: ytdP, ytdVariacion: ytdP ? ytdA / ytdP - 1 : null },
+      meses: meses, mes: mes, esActual: esActual,
+      mesNombre: MESES[mAct - 1] + ' ' + y, mesCorto: MESES_CORTO[mAct - 1] + ' ' + y,
+      totalDias: twd, transcurridos: elWD, restantes: remWD, mthPct: mthPct,
+      empresa: empresa, vendedores: vendedores, facturacion: facturacion,
+      anual: { anio: y, inflacion: infl, meses: anual, max: maxV, hayAnterior: hayAnterior,
+        cerrados: tot.n, ytdActual: tot.act, ytdAnterior: tot.ant, ytdAjustado: tot.aj,
+        varNominal: tot.ant ? tot.act / tot.ant - 1 : null, varReal: tot.aj ? tot.act / tot.aj - 1 : null },
       balance: bal, vencimientos: venc,
       avisos: avisos
     };
@@ -691,6 +764,11 @@ window.TABLERO_CONFIG = {
     });
   }
   function pc(f) { return Math.max(0, Math.min(100, (f || 0) * 100)); }
+  // Importe completo, mismo formato que VentasTrack: $265.722.552
+  function fmt(n) {
+    if (n == null || !isFinite(n)) return '—';
+    return (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString('es-AR');
+  }
 
   // ---------- Lectura ----------
   function leer(f) {
@@ -726,119 +804,172 @@ window.TABLERO_CONFIG = {
 
   // ---------- Piezas ----------
   function etiqueta(clase, texto) { return '<span class="etiqueta ' + clase + '">' + esc(texto) + '</span>'; }
-  function kpi(rot, valor, sub, extra) {
-    return '<div class="kpi' + (extra ? ' ' + extra : '') + '"><span class="rot">' + rot + '</span>' +
-      '<span class="num n34">' + valor + '</span>' + (sub ? '<span class="sub">' + sub + '</span>' : '') + '</div>';
+  // Colores de avance, igual que VentasTrack: ≥100% verde, ≥70% ámbar, menos rojo.
+  function sc(p) { return p >= 100 ? 'c-ok' : p >= 70 ? 'c-warn' : 'c-bad'; }
+  function signo(n) { return (n >= 0 ? '+' : '') + n; }
+  function k(rot, val, sub, clase, borde) {
+    return '<div class="k' + (borde ? ' ' + borde : '') + '"><span class="k-rot">' + rot + '</span>' +
+      '<span class="k-val' + (clase ? ' ' + clase : '') + '">' + val + '</span>' + (sub ? '<span class="k-sub">' + sub + '</span>' : '') + '</div>';
   }
-  function itemRitmo(rot, valor, sub, clase) {
-    return '<div class="item"><span class="rot' + (clase ? ' ' + clase : '') + '">' + rot + '</span>' +
-      '<span class="num n20' + (clase ? ' ' + clase : '') + '">' + valor + '</span><span class="sub">' + sub + '</span></div>';
-  }
-  function bloqueRitmo(d, ind, nombre, cuarto) {
-    var cl = ind.desvio != null && ind.desvio < 0 ? 'neg' : 'pos';
-    return '<div class="ritmo"><span class="tit">Cómo venimos respecto al avance del mes</span><div class="fila">' +
-      itemRitmo('Mes transcurrido', P(d.avanceMes), 'Día hábil ' + d.transcurridos + ' de ' + d.totalDias) +
-      itemRitmo('Avance de la ' + nombre, P(ind.pctObjetivo), 'del objetivo') +
-      itemRitmo('Desvío vs. lo esperado a hoy', MS(ind.desvio),
-        puntos(ind.desvioPp) + (ind.ritmo != null ? ' · al ' + Math.round(ind.ritmo * 100) + '% del ritmo' : ''), cl) +
-      cuarto + '</div></div>';
-  }
-  function etiquetaRitmo(ind) {
-    if (!ind || ind.ritmo == null) return '';
-    if (ind.ritmo >= 1) return etiqueta('ok', 'En ritmo');
-    if (ind.ritmo >= 0.9) return etiqueta('warn', 'Levemente abajo del ritmo');
-    return etiqueta('bad', 'Por debajo del ritmo');
+  function chip(rot, val, clase) { return '<span>' + rot + ': <b class="' + (clase || '') + '">' + val + '</b></span>'; }
+  function barraAvance(p, mthPct, clase, color) {
+    return '<div class="barra" role="img" aria-label="Avance ' + p + '% contra ' + mthPct + '% del mes">' +
+      '<div class="relleno ' + (clase || '') + '" style="width:' + Math.min(100, p) + '%' + (color ? ';background:' + color : '') + '"></div>' +
+      '<div class="marca hoy" style="left:' + Math.min(100, mthPct) + '%" title="Mes transcurrido ' + mthPct + '%"></div></div>';
   }
 
   // ---------- Secciones ----------
-  function secVenta(d) {
-    var v = d.venta;
-    var html = '<section class="tarjeta" aria-labelledby="t-venta"><div class="titulo-sec"><h2 id="t-venta">Venta</h2>' + etiquetaRitmo(v) + '</div>';
-    html += '<div class="fila">' +
-      kpi('Venta del día' + (d.corte && d.esUltimo ? ' (' + F(d.corte) + ')' : ''), M(v.dia),
-        'Promedio diario ' + M(v.promedio)) +
-      kpi('Venta acumulada del mes', M(v.acumulado), d.objetivo ? P(v.pctObjetivo) + ' del objetivo' : 'Sin objetivo cargado') +
-      kpi('Objetivo del mes', M(d.objetivo), d.objetivo ? 'Faltan ' + M(v.faltan) : 'Cargalo en VentasTrack', 'destacado') +
+  function secEmpresa(d) {
+    var e = d.empresa, f = d.facturacion, bo = f.backorder;
+    var html = '<section class="tarjeta" aria-labelledby="t-emp"><div class="titulo-sec"><h2 id="t-emp">Venta · Empresa</h2>' +
+      (e.objetivo ? (e.diff >= 0 ? etiqueta('ok', 'En ritmo') : etiqueta('bad', 'Por debajo del ritmo')) : '') + '</div>';
+    html += '<div class="kv">' +
+      k('Venta del día', fmt(e.ventaDia), d.esActual ? (e.fechaDia ? 'Última carga ' + F(e.fechaDia) : 'Sin ventas cargadas') : 'Período cerrado') +
+      k('Venta total', fmt(e.total), d.mesCorto) +
+      k('Objetivo', fmt(e.objetivo), 'suma vendedores') +
+      k('Avance', signo(e.diff) + '%', '<span class="' + sc(e.p) + '">' + e.p + '%</span> vs <span class="c-mes">' + d.mthPct + '%</span> mes',
+        e.diff >= 0 ? 'c-ok' : 'c-bad', e.diff >= 0 ? 'b-ok' : 'b-bad') +
+      k('Días hábiles', d.transcurridos + '/' + d.totalDias, d.restantes + ' restantes') +
+      k('Backorder', fmt(Math.max(0, bo)), f.boPct + '% del vendido', bo > 0 ? 'c-bad' : 'c-ok', bo > 0 ? 'b-bad' : 'b-ok') +
       '</div>';
-    if (d.objetivo) {
-      html += '<div style="display:flex;flex-direction:column;gap:8px"><div class="barra" role="img" aria-label="Avance de la venta ' + P(v.pctObjetivo) + ' contra ' + P(d.avanceMes) + ' del mes transcurrido">' +
-        '<div class="relleno" style="width:' + pc(v.pctObjetivo) + '%"></div>' +
-        '<div class="marca hoy" style="left:' + pc(d.avanceMes) + '%"></div></div>' +
-        '<div class="leyenda"><span>Avance <b>' + P(v.pctObjetivo) + '</b></span><span>Línea: ritmo esperado al día de hoy (' + M(v.esperado) + ')</span><span>Objetivo ' + M(d.objetivo) + '</span></div></div>';
-      html += bloqueRitmo(d, v, 'venta',
-        itemRitmo('Proyección al cierre', M(v.proyeccion), P(v.pctProyeccion) + ' del objetivo'));
-    }
+    html += '<div class="avance"><div class="titulo-sec"><b>Avance global</b><span class="num n30 ' + sc(e.p) + '">' + e.p + '%</span></div>' +
+      '<span class="sub">' + fmt(e.total) + ' / ' + fmt(e.objetivo) + '</span>' +
+      barraAvance(e.p, d.mthPct, sc(e.p)) +
+      '<div class="chips">' +
+      chip('Venta faltante', fmt(Math.max(0, e.gap))) +
+      chip('Venta diaria', fmt(e.dailyAvg)) +
+      (e.gap > 0 && d.restantes > 0 ? chip('Venta prom. faltante', fmt(e.dailyNeed) + '/día', e.dailyNeed <= e.dailyAvg ? 'c-ok' : 'c-warn') : '') +
+      chip('vs ritmo', (e.vsExp >= 0 ? '+' : '') + fmt(e.vsExp), e.vsExp >= 0 ? 'c-ok' : 'c-bad') +
+      (d.esActual ? chip('Proyección al cierre', fmt(e.proyeccion)) : '') +
+      '</div><span class="k-sub">La línea blanca marca el % del mes transcurrido (' + d.mthPct + '%).</span></div>';
+    return html + '</section>';
+  }
+
+  function secFacturable(d) {
+    var e = d.empresa, f = d.facturacion, bo = f.backorder;
+    var html = '<section class="tarjeta" aria-labelledby="t-fb"><div class="titulo-sec"><h2 id="t-fb">Facturado · Facturable · Backorder</h2>' +
+      '<span class="nota">Sobre lo vendido en ' + esc(d.mesCorto) + '</span></div>';
+    var tv = e.total || 1;
+    html += '<div class="composicion" role="img" aria-label="Composición de lo vendido">' +
+      (f.facturado > 0 ? '<div style="width:' + Math.min(100, f.facturado / tv * 100) + '%;background:var(--facturado)"></div>' : '') +
+      (f.facturable > 0 ? '<div style="width:' + Math.min(100, f.facturable / tv * 100) + '%;background:var(--facturable)"></div>' : '') +
+      (bo > 0 ? '<div style="width:' + Math.min(100, bo / tv * 100) + '%;background:var(--coral)"></div>' : '') + '</div>';
+    html += '<div class="bf">' +
+      '<div style="border-left-color:var(--vendido)"><span class="k-rot">Vendido</span><span class="k-val" style="color:var(--vendido)">' + fmt(e.total) + '</span><span class="k-sub">100%</span></div>' +
+      '<div style="border-left-color:var(--facturado)"><span class="k-rot">Facturado</span><span class="k-val" style="color:var(--facturado)">' + fmt(f.facturado) + '</span><span class="k-sub">' + (e.total ? f.pFacturado + '%' : '—') + '</span></div>' +
+      '<div style="border-left-color:var(--facturable)"><span class="k-rot">Facturable</span><span class="k-val" style="color:var(--facturable)">' + fmt(f.facturable) + '</span><span class="k-sub">' + (e.total ? f.pFacturable + '%' : '—') + '</span></div>' +
+      '<div style="border-left-color:' + (bo > 0 ? 'var(--coral)' : 'var(--acento)') + '"><span class="k-rot">Backorder</span><span class="k-val ' + (bo > 0 ? 'c-bad' : 'c-ok') + '">' + fmt(Math.abs(bo)) + '</span><span class="k-sub">' + (bo > 0 ? f.boPct + '% sin destino' : 'todo asignado') + '</span></div>' +
+      '</div>';
     return html + '</section>';
   }
 
   function secFacturacion(d) {
-    var f = d.facturacion;
+    var f = d.facturacion, tg = d.empresa.objetivo;
     var html = '<section class="tarjeta" aria-labelledby="t-fact"><div class="titulo-sec"><h2 id="t-fact">Facturación vs. objetivo y punto de equilibrio</h2>';
-    if (!f) {
+    if (!f.hayDato) {
       return html + '</div><p class="vacio" style="margin:0">Todavía no hay facturación cargada en VentasTrack para ' + esc(d.mesNombre) + '.</p></section>';
     }
-    if (d.objetivo && f.proyeccion != null) {
-      html += f.proyeccion >= d.objetivo ? etiqueta('ok', 'Alcanza el objetivo al ritmo actual')
-        : d.pe && f.proyeccion >= d.pe ? etiqueta('warn', 'Cubre el equilibrio, no el objetivo')
+    if (tg && f.proyeccion != null) {
+      html += f.proyeccion >= tg ? etiqueta('ok', 'Alcanza el objetivo al ritmo actual')
+        : f.pe && f.proyeccion >= f.pe ? etiqueta('warn', 'Cubre el equilibrio, no el objetivo')
         : etiqueta('bad', 'No cubre el equilibrio al ritmo actual');
     }
-    html += '</div><div class="fila">' +
-      '<div class="col-grande"><span class="rot">Facturación acumulada</span><span class="num n52">' + M(f.acumulado) + '</span>' +
-      (f.facturable ? '<span class="sub" style="font-size:14px">Facturado ' + M(f.facturado) + ' + facturable ' + M(f.facturable) + '</span>' : '') +
-      '<span class="sub" style="font-size:14px">Proyección al cierre ' + M(f.proyeccion) + '</span></div>' +
-      '<div class="col-div"><span class="rot">Objetivo</span><span class="num n26">' + M(d.objetivo) + '</span><span class="sub">' + (d.objetivo ? 'Faltan ' + M(f.faltan) : '—') + '</span></div>' +
-      '<div class="col-div"><span class="rot pe">Punto de equilibrio</span><span class="num n26 pe">' + M(d.pe) + '</span><span class="sub">' + (d.pe ? (f.peFaltan > 0 ? 'Faltan ' + M(f.peFaltan) : 'Cubierto') : '—') + '</span></div>' +
-      '<div class="col-div"><span class="rot">Necesario por día</span><span class="num n26">' + M(f.necesarioDia) + '</span><span class="sub">vs. promedio ' + M(f.promedio) + '</span></div>' +
+    html += '</div><div class="kv">' +
+      k('Facturación del mes', fmt(f.total), 'Facturado ' + fmt(f.facturado) + ' + facturable ' + fmt(f.facturable), '', 'k-ancho') +
+      k('Objetivo', fmt(tg), 'Falta facturar ' + fmt(Math.max(0, f.gap))) +
+      k('Avance', signo(f.diff) + '%', '<span class="' + sc(f.p) + '">' + f.p + '%</span> vs <span class="c-mes">' + d.mthPct + '%</span> mes',
+        f.diff >= 0 ? 'c-ok' : 'c-bad', f.diff >= 0 ? 'b-ok' : 'b-bad') +
+      k('Punto de equilibrio', fmt(f.pe), f.pe ? (f.peFaltan > 0 ? 'Faltan ' + fmt(f.peFaltan) : 'Cubierto') : '—', 'pe') +
+      (d.esActual ? k('Proyección al cierre', fmt(f.proyeccion), tg ? Math.round(f.proyeccion / tg * 100) + '% del objetivo' : '') : '') +
       '</div>';
-    if (d.objetivo) {
-      var escala = Math.max(d.objetivo, d.pe || 0, f.proyeccion || 0, f.acumulado || 0);
-      var x = function (v) { return pc(v / escala); };
-      html += '<div style="display:flex;flex-direction:column;gap:8px;padding-top:18px">' +
-        '<div class="barra alta" role="img" aria-label="Facturación ' + M(f.acumulado) + ', equilibrio ' + M(d.pe) + ', objetivo ' + M(d.objetivo) + '">' +
-        '<div class="relleno" style="width:' + x(f.acumulado) + '%"></div>' +
-        (f.proyeccion != null ? '<div class="marca proy" style="left:' + x(f.proyeccion) + '%"></div>' : '') +
-        (d.pe ? '<div class="marca pe" style="left:' + x(d.pe) + '%"></div>' : '') +
-        '<div class="marca obj" style="left:' + x(d.objetivo) + '%"></div></div>' +
-        '<div class="leyenda"><span><span class="sw" style="background:var(--acento)"></span>Acumulado ' + P(f.pctObjetivo) + '</span>' +
-        '<span>┆ Proyección al cierre ' + P(f.pctProyeccion) + '</span>' +
-        (d.pe ? '<span><span class="sw" style="background:var(--ambar)"></span>Equilibrio ' + P(d.pe / d.objetivo) + '</span>' : '') +
-        '<span><span class="sw" style="background:var(--tinta)"></span>Objetivo 100%</span></div></div>';
-      html += bloqueRitmo(d, f, 'facturación', d.pe ?
-        itemRitmo('Equilibrio al ritmo actual', f.peAlcanzable ? 'Se alcanza' : 'No se alcanza',
-          'Proyección ' + M(f.proyeccion) + ' vs. ' + M(d.pe), f.peAlcanzable ? 'pos' : 'neg') :
-        itemRitmo('Proyección al cierre', M(f.proyeccion), P(f.pctProyeccion) + ' del objetivo'));
+    if (tg) {
+      var escala = Math.max(tg, f.pe || 0, f.proyeccion || 0, f.total || 0);
+      var x = function (v) { return Math.max(0, Math.min(100, v / escala * 100)); };
+      html += '<div class="avance"><div class="barra alta" role="img" aria-label="Facturación ' + fmt(f.total) + ', equilibrio ' + fmt(f.pe) + ', objetivo ' + fmt(tg) + '">' +
+        '<div class="relleno ' + sc(f.p) + '" style="width:' + x(f.total) + '%"></div>' +
+        (d.esActual && f.proyeccion != null ? '<div class="marca proy" style="left:' + x(f.proyeccion) + '%"></div>' : '') +
+        '<div class="marca hoy" style="left:' + x(tg * d.mthPct / 100) + '%"></div>' +
+        (f.pe ? '<div class="marca pe" style="left:' + x(f.pe) + '%"></div>' : '') +
+        '<div class="marca obj" style="left:' + x(tg) + '%"></div></div>' +
+        '<div class="leyenda"><span><span class="sw" style="background:var(--acento)"></span>Facturado + facturable ' + f.p + '%</span>' +
+        '<span>│ Esperado a hoy ' + d.mthPct + '%</span>' +
+        (d.esActual ? '<span>┆ Proyección ' + Math.round(f.proyeccion / tg * 100) + '%</span>' : '') +
+        (f.pe ? '<span><span class="sw" style="background:var(--ambar)"></span>Equilibrio ' + Math.round(f.pe / tg * 100) + '%</span>' : '') +
+        '<span><span class="sw" style="background:var(--tinta)"></span>Objetivo 100%</span></div>' +
+        '<div class="chips">' +
+        chip('Falta facturar', fmt(Math.max(0, f.gap))) +
+        chip('Facturación diaria', fmt(f.dailyAvg)) +
+        (f.gap > 0 && d.restantes > 0 ? chip('Prom. faltante', fmt(f.dailyNeed) + '/día', f.dailyNeed <= f.dailyAvg ? 'c-ok' : 'c-warn') : '') +
+        chip('vs ritmo', (f.vsExp >= 0 ? '+' : '') + fmt(f.vsExp), f.vsExp >= 0 ? 'c-ok' : 'c-bad') +
+        (f.pe && d.esActual ? chip('Equilibrio al ritmo actual', f.peAlcanzable ? 'Se alcanza' : 'No se alcanza', f.peAlcanzable ? 'c-ok' : 'c-bad') : '') +
+        '</div></div>';
     }
     return html + '</section>';
   }
 
-  function secAnual(d) {
-    var a = d.anual, y = a.anio, max = a.max || 1;
-    var html = '<section class="tarjeta" aria-labelledby="t-anual"><div class="titulo-sec"><h2 id="t-anual">Facturación mensual · ' + y + ' vs. ' + (y - 1) + '</h2>' +
-      '<div class="leyenda" style="gap:16px"><span><span class="sw" style="background:var(--acento-claro)"></span>' + (y - 1) + '</span>' +
-      '<span><span class="sw" style="background:var(--acento)"></span>' + y + '</span>' +
-      '<span><span class="sw" style="border:2px dashed var(--acento);width:12px;height:12px"></span>Proyección mes en curso</span></div></div>';
-    var barras = '', etis = '', vars = '';
-    a.meses.forEach(function (m) {
-      var tip = m.nombre + ' — ' + (y - 1) + ': ' + M(m.anterior) + ' · ' + y + ': ' + M(m.actual) +
-        (m.estado === 'encurso' ? ' (en curso, proyección ' + M(m.proyeccion) + ')' : '') +
-        (m.variacion != null ? ' · Variación ' + VAR(m.variacion) : '');
-      var hA = m.anterior != null ? pc(m.anterior / max) : 0;
-      var hC = m.actual != null ? pc(m.actual / max) : 0;
-      var actual = m.estado === 'encurso'
-        ? '<div class="pila">' + (m.proyeccion != null ? '<div class="proy" style="height:' + pc(m.proyeccion / max) + '%"></div>' : '') +
-          '<div class="b act" style="height:' + hC + '%"></div></div>'
-        : '<div class="b act" style="height:' + hC + '%"></div>';
-      barras += '<div class="mes" title="' + esc(tip) + '"><div class="b ant" style="height:' + hA + '%"></div>' + actual + '</div>';
-      etis += '<span>' + m.corto + '</span>';
-      vars += '<span class="' + (m.variacion == null ? '' : m.variacion >= 0 ? 'pos' : 'neg') + '">' + (m.variacion == null ? '' : VAR(m.variacion)) + '</span>';
+  var COLORES_VEND = ['#7AA2FF', '#C6F432', '#B794F6', '#4FD1C5', '#FFB547', '#FF8A7A', '#F472B6', '#94A3B8'];
+  function secVendedores(d) {
+    if (!d.vendedores.length) return '';
+    var html = '<section class="tarjeta" aria-labelledby="t-vend"><div class="titulo-sec"><h2 id="t-vend">Vendedores</h2>' +
+      '<span class="nota">Mes transcurrido ' + d.mthPct + '%</span></div><div class="vend">';
+    d.vendedores.forEach(function (r) {
+      var color = COLORES_VEND[r.idx % COLORES_VEND.length];
+      html += '<div class="v" style="border-left-color:' + color + '">' +
+        '<div class="v-cab"><div><b>' + esc(r.vendedor) + '</b><span class="k-sub">' + fmt(r.total) + ' / ' + fmt(r.goal) + '</span></div>' +
+        '<div class="v-der"><span class="k-sub">mes: <span class="c-mes">' + d.mthPct + '%</span><br>diff: <b class="' + (r.diff >= 0 ? 'c-ok' : 'c-bad') + '">' + signo(r.diff) + '%</b></span>' +
+        '<span class="num n24 ' + sc(r.p) + '">' + r.p + '%</span></div></div>' +
+        barraAvance(r.p, d.mthPct, '', color) +
+        '<div class="chips">' +
+        chip('Venta diaria', fmt(r.dailyAvg)) +
+        chip('Venta faltante', fmt(Math.max(0, r.gap))) +
+        (r.gap > 0 && d.restantes > 0 ? chip('Prom. faltante', fmt(r.dailyNeed) + '/día', r.dailyNeed <= r.dailyAvg ? 'c-ok' : 'c-warn') : '') +
+        (r.vsExp !== 0 ? chip('vs ritmo', (r.vsExp >= 0 ? '+' : '') + fmt(r.vsExp), r.vsExp >= 0 ? 'c-ok' : 'c-bad') : '') +
+        '</div></div>';
     });
-    html += '<div class="graf-scroll"><div class="graf" role="img" aria-label="Facturación por mes, ' + y + ' contra ' + (y - 1) + '">' +
-      '<div class="barras">' + barras + '</div><div class="etis">' + etis + '</div><div class="vars">' + vars + '</div></div></div>';
+    return html + '</div></section>';
+  }
+
+  function secAnual(d) {
+    var a = d.anual, y = a.anio, max = a.max || 1, inflPct = Math.round(a.inflacion * 1000) / 10;
+    function h(v) { return v != null ? Math.max(0, Math.min(100, v / max * 100)) : 0; }
+    function clase(v) { return v == null ? '' : v >= 0 ? 'c-ok' : 'c-bad'; }
+    var html = '<section class="tarjeta" id="sec-anual" aria-labelledby="t-anual"><div class="titulo-sec"><h2 id="t-anual">Facturación mensual · ' + (y - 1) + ' vs. ' + y + '</h2>' +
+      '<label class="infl">Inflación ' + (y - 1) + ' → ' + y + ' <input id="inp-infl" type="number" step="0.5" min="0" value="' + inflPct + '" aria-label="Inflación en porcentaje"> %</label></div>' +
+      '<div class="leyenda" style="justify-content:flex-start;gap:18px">' +
+      '<span><span class="sw" style="background:var(--acento-claro)"></span>' + (y - 1) + '</span>' +
+      '<span><span class="sw" style="background:var(--ambar)"></span>' + (y - 1) + ' ajustado (+' + nf1.format(inflPct) + '%)</span>' +
+      '<span><span class="sw" style="background:var(--acento)"></span>' + y + '</span>' +
+      (d.esActual ? '<span><span class="sw" style="border:2px dashed var(--acento);width:12px;height:12px"></span>Proyección mes en curso</span>' : '') + '</div>';
+    var barras = '', etis = '', vN = '', vR = '';
+    a.meses.forEach(function (m) {
+      var tip = m.nombre + ' — ' + (y - 1) + ': ' + fmt(m.anterior) + ' · ' + (y - 1) + ' ajustado: ' + fmt(m.ajustado) + ' · ' + y + ': ' + fmt(m.actual) +
+        (m.estado === 'encurso' ? ' (en curso, proyección ' + fmt(m.proyeccion) + ')' : '') +
+        (m.varNominal != null ? ' · vs ' + (y - 1) + ': ' + VAR(m.varNominal) : '') +
+        (m.varReal != null ? ' · real: ' + VAR(m.varReal) : '');
+      var actual = m.estado === 'encurso'
+        ? '<div class="pila">' + (m.proyeccion != null ? '<div class="proy" style="height:' + h(m.proyeccion) + '%"></div>' : '') +
+          '<div class="b act" style="height:' + h(m.actual) + '%"></div></div>'
+        : '<div class="b act" style="height:' + h(m.actual) + '%"></div>';
+      barras += '<div class="mes" title="' + esc(tip) + '"><div class="b ant" style="height:' + h(m.anterior) + '%"></div>' +
+        '<div class="b aj" style="height:' + h(m.ajustado) + '%"></div>' + actual + '</div>';
+      etis += '<span>' + m.corto + '</span>';
+      vN += '<span class="' + clase(m.varNominal) + '">' + (m.varNominal == null ? '' : VAR(m.varNominal)) + '</span>';
+      vR += '<span class="' + clase(m.varReal) + '">' + (m.varReal == null ? '' : VAR(m.varReal)) + '</span>';
+    });
+    html += '<div class="graf-scroll"><div class="graf graf3" role="img" aria-label="Facturación por mes: ' + (y - 1) + ', ' + (y - 1) + ' ajustado e ' + y + '">' +
+      '<div class="barras">' + barras + '</div><div class="etis">' + etis + '</div>' +
+      '<div class="vars"><em>vs ' + (y - 1) + '</em>' + vN + '</div>' +
+      '<div class="vars"><em>Real</em>' + vR + '</div></div></div>';
     if (!a.hayAnterior) {
       html += '<p class="vacio" style="margin:0">Cargá la facturación de ' + (y - 1) + ' en la pestaña Facturación de VentasTrack (una fila por mes, con Año = ' + (y - 1) + ') para ver la comparación.</p>';
-    } else if (a.ytdAnterior) {
-      html += '<span class="sub">Meses cerrados del año: ' + M(a.ytdActual) + ' contra ' + M(a.ytdAnterior) + ' en ' + (y - 1) +
-        ' (<b class="' + (a.ytdVariacion >= 0 ? 'pos' : 'neg') + '">' + VAR(a.ytdVariacion) + '</b>). Pasá el mouse por cada mes para ver los importes.</span>';
+    } else if (a.cerrados) {
+      html += '<div class="chips">' +
+        chip('Meses cerrados ' + y, fmt(a.ytdActual)) +
+        chip((y - 1) + ' mismos meses', fmt(a.ytdAnterior)) +
+        chip('Variación nominal', VAR(a.varNominal), clase(a.varNominal)) +
+        chip((y - 1) + ' ajustado', fmt(a.ytdAjustado)) +
+        chip('Variación real', VAR(a.varReal), clase(a.varReal)) +
+        '</div><span class="k-sub">"Real" compara contra ' + (y - 1) + ' ajustado por la inflación cargada. Pasá el mouse por cada mes para ver los importes.</span>';
     }
     return html + '</section>';
   }
@@ -900,12 +1031,37 @@ window.TABLERO_CONFIG = {
       var p = m.split('-');
       return '<option value="' + m + '"' + (m === d.mes ? ' selected' : '') + '>' + C.MESES[+p[1] - 1] + ' ' + p[0] + '</option>';
     }).join('') : '';
+    var hoy = new Date();
     return '<header class="cabecera"><div><div class="sup">Control de gestión</div><h1>' + esc(CFG.titulo || 'Tablero de Comando') + '</h1></div>' +
       '<div class="controles">' +
-      (d && d.corte ? '<span>Datos al ' + F(d.corte, true) + '</span>' : '') +
+      (d ? '<span>' + (d.esActual ? 'Hoy ' + F({ d: hoy.getDate(), m: hoy.getMonth() + 1, y: hoy.getFullYear() }, true) : 'Período cerrado') + '</span>' : '') +
       (d ? '<span class="pastilla">Día hábil ' + d.transcurridos + ' de ' + d.totalDias + '</span>' : '') +
       (d ? '<label><span style="position:absolute;left:-9999px">Mes</span><select id="sel-mes">' + opciones + '</select></label>' : '') +
       '<button type="button" id="btn-act">Actualizar</button></div></header>';
+  }
+
+  // Inflación para la comparativa: la que se cargó en el gráfico (guardada en este navegador) o la de la configuración.
+  function inflacionGuardada() {
+    try { var v = localStorage.getItem('tablero.inflacion'); if (v != null && v !== '' && isFinite(+v)) return +v; } catch (e) {}
+    return +CFG.inflacion || 0;
+  }
+  estado.inflacion = inflacionGuardada();
+
+  function modelo() {
+    return C.calcular(estado.tablas, estado.mes, { puntoEquilibrio: CFG.puntoEquilibrio, inflacion: estado.inflacion / 100 });
+  }
+
+  function enlazarInflacion() {
+    var inp = document.getElementById('inp-infl');
+    if (!inp) return;
+    inp.addEventListener('change', function () {
+      var v = parseFloat(String(inp.value).replace(',', '.'));
+      if (!isFinite(v) || v < 0) v = 0;
+      estado.inflacion = v;
+      try { localStorage.setItem('tablero.inflacion', String(v)); } catch (e) {}
+      var sec = document.getElementById('sec-anual');
+      if (sec) { sec.outerHTML = secAnual(modelo()); enlazarInflacion(); }
+    });
   }
 
   function dibujar() {
@@ -917,12 +1073,12 @@ window.TABLERO_CONFIG = {
       html = '<div class="vacio">Cargando datos…</div>';
     } else {
       try {
-        d = C.calcular(estado.tablas, estado.mes, { puntoEquilibrio: CFG.puntoEquilibrio });
+        d = modelo();
         estado.mes = d.mes;
         var avisos = estado.avisos.concat(d.avisos);
         html = cabecera(d) +
           (avisos.length ? '<div class="aviso">' + avisos.map(esc).join('<br>') + '</div>' : '') +
-          secVenta(d) + secFacturacion(d) + secAnual(d) + secFinanciera(d) +
+          secEmpresa(d) + secFacturable(d) + secFacturacion(d) + secAnual(d) + secFinanciera(d) +
           '<p class="pie">Ventas, objetivos y facturación: VentasTrack · Situación financiera: planilla del tablero' +
           (estado.leido ? ' · Leído a las ' + hora(estado.leido) : '') + '</p>';
       } catch (e) {
@@ -934,6 +1090,7 @@ window.TABLERO_CONFIG = {
     if (sel) sel.addEventListener('change', function () { estado.mes = sel.value; dibujar(); });
     var btn = document.getElementById('btn-act');
     if (btn) btn.addEventListener('click', function () { btn.disabled = true; btn.textContent = 'Actualizando…'; cargar(); });
+    enlazarInflacion();
   }
 
   cargar();
