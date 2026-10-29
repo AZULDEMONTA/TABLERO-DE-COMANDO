@@ -1,0 +1,1073 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Semáforo de gestión</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+/* Estilo "Sala de control": fondo oscuro, acento verde lima, números monoespaciados. */
+:root {
+  color-scheme: dark;
+  --fondo: #0D1117;
+  --tarjeta: #151B23;
+  --suave: #0F141B;
+  --tinta: #E6EDF3;
+  --tenue: #9AA7B5;
+  --gris: #9AA7B5;
+  --borde: #242C38;
+  --linea: #1C232D;
+  --pista: #242C38;
+  --acento: #C6F432;
+  --acento-claro: #3B4757;
+  --acento-suave: rgba(198, 244, 50, .12);
+  --ambar: #FFB547;
+  --coral: #FF8A7A;
+  --mono: 'DM Mono', ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--fondo); }
+body { font-family: 'Space Grotesk', system-ui, sans-serif; color: var(--tinta); -webkit-font-smoothing: antialiased; }
+.pagina { max-width: 1240px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 24px; }
+.mono { font-family: var(--mono); }
+h1, h2, h3 { margin: 0; }
+
+.cabecera { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.cabecera .sup { font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--acento); }
+.cabecera h1 { font-size: 36px; font-weight: 700; letter-spacing: -.02em; margin-top: 6px; }
+.controles { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-family: var(--mono); font-size: 13px; color: var(--tenue); }
+.controles select, .controles button {
+  font: inherit; color: var(--tinta); background: var(--tarjeta);
+  border: 1px solid #2A3340; border-radius: 6px; padding: 9px 12px; min-height: 40px;
+}
+.controles button { cursor: pointer; color: var(--acento); }
+.controles button:hover, .controles select:hover { border-color: var(--acento); }
+.pastilla { border: 1px solid #2A3340; border-radius: 6px; padding: 9px 12px; }
+
+.tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 28px; display: flex; flex-direction: column; gap: 22px; }
+.titulo-sec { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.titulo-sec h2 { font-size: 14px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--tenue); }
+.titulo-sec .nota { font-family: var(--mono); font-size: 13px; color: var(--tenue); }
+.etiqueta { font-size: 12px; font-weight: 600; border: 1px solid currentColor; border-radius: 999px; padding: 4px 12px; }
+.ok { color: var(--acento); }
+.warn { color: var(--ambar); }
+.bad { color: var(--coral); }
+
+.fila { display: flex; flex-wrap: wrap; gap: 16px; }
+.kpi { flex: 1 1 240px; background: var(--suave); border: 1px solid transparent; border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.kpi.destacado { border-color: var(--acento); }
+.kpi.destacado .rot { color: var(--acento); }
+.rot { font-size: 13px; color: var(--tenue); }
+.sub { font-size: 13px; color: var(--tenue); }
+.num { font-family: var(--mono); font-weight: 500; letter-spacing: -.02em; }
+.n34 { font-size: 40px; }
+.n52 { font-size: 64px; line-height: 1; letter-spacing: -.03em; }
+.n26 { font-size: 26px; }
+.n30 { font-size: 28px; }
+.n38 { font-size: 38px; }
+.n20 { font-size: 22px; }
+.n24 { font-size: 24px; }
+
+.col-div { flex: 1 1 180px; display: flex; flex-direction: column; gap: 4px; }
+.col-grande { flex: 2 1 300px; display: flex; flex-direction: column; gap: 4px; }
+.col-div .pe, .pe { color: var(--ambar); }
+
+.barra { position: relative; height: 10px; background: var(--pista); border-radius: 2px; }
+.barra.alta { height: 18px; }
+.barra .relleno { position: absolute; left: 0; top: 0; bottom: 0; background: var(--acento); border-radius: 2px; min-width: 3px; }
+.barra .marca { position: absolute; top: -6px; bottom: -6px; width: 3px; margin-left: -1px; }
+.barra .marca.hoy { background: var(--tinta); width: 2px; }
+.barra .marca.pe { background: var(--ambar); top: -8px; bottom: -8px; }
+.barra .marca.obj { background: var(--tinta); top: -8px; bottom: -8px; }
+.barra .marca.proy { width: 0; border-left: 2px dashed var(--tenue); top: 0; bottom: 0; background: none; }
+.leyenda { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-family: var(--mono); font-size: 12px; text-transform: uppercase; color: var(--tenue); }
+.leyenda b { color: var(--tinta); font-weight: 500; }
+.sw { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: 0; }
+
+.ritmo { display: flex; flex-direction: column; gap: 10px; }
+.ritmo .tit { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--acento); }
+.ritmo .fila { gap: 1px; background: var(--borde); border: 1px solid var(--borde); border-radius: 6px; overflow: hidden; }
+.ritmo .item { flex: 1 1 200px; background: var(--tarjeta); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+.ritmo .item .rot, .ritmo .item .sub { font-size: 12px; }
+.neg { color: var(--coral); }
+.pos { color: var(--acento); }
+
+/* Comparativa anual */
+.graf-scroll { overflow-x: auto; }
+.graf { min-width: 640px; display: flex; flex-direction: column; gap: 8px; }
+.graf .barras { display: flex; align-items: flex-end; gap: 12px; height: 240px; border-bottom: 1px solid #2A3340; padding: 0 4px; }
+.graf .mes { flex: 1 1 0; display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 100%; }
+.graf .b { width: 40%; position: relative; }
+.graf .b.ant { background: var(--acento-claro); }
+.graf .b.act { background: var(--acento); }
+.graf .pila { width: 40%; height: 100%; position: relative; }
+.graf .pila .b { position: absolute; left: 0; right: 0; bottom: 0; width: auto; }
+.graf .pila .proy { position: absolute; left: 0; right: 0; bottom: 0; border: 2px dashed var(--acento); border-bottom: none; background: transparent; }
+.graf .etis { display: flex; gap: 12px; padding: 0 4px; }
+.graf .etis span { flex: 1 1 0; text-align: center; font-family: var(--mono); font-size: 12px; text-transform: uppercase; color: var(--tenue); }
+.graf .vars { display: flex; gap: 12px; padding: 0 4px; }
+.graf .vars span { flex: 1 1 0; text-align: center; font-size: 11px; font-family: var(--mono); }
+
+/* Situación financiera */
+.sec-fin { display: flex; flex-direction: column; gap: 16px; }
+.sec-fin > .titulo-sec { padding: 8px 4px 0; }
+.mini { flex: 1 1 260px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+.tramos-barra { display: flex; height: 14px; border-radius: 2px; overflow: hidden; gap: 2px; background: var(--pista); }
+.tramo { flex: 1 1 200px; display: flex; flex-direction: column; gap: 4px; border-top: 3px solid; padding-top: 10px; }
+.tabla { flex: 1 1 400px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 8px 24px 16px; }
+.tabla .enc { padding: 14px 0; border-bottom: 1px solid var(--borde); font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--tenue); }
+.tabla .reng { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--linea); font-size: 14px; }
+.tabla .reng .num { font-weight: 400; white-space: nowrap; }
+.tabla .tot { display: flex; justify-content: space-between; padding: 14px 0 4px; font-weight: 700; font-size: 15px; }
+.tag { font-size: 11px; color: var(--acento); background: var(--acento-suave); border-radius: 4px; padding: 2px 6px; margin-left: 8px; white-space: nowrap; }
+.bal { flex: 1 1 400px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 22px 24px; display: flex; flex-direction: column; gap: 6px; }
+.bal .cab { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
+.rojo { color: var(--coral); }
+
+.aviso { background: rgba(255, 181, 71, .1); border: 1px solid rgba(255, 181, 71, .4); color: var(--ambar); border-radius: 6px; padding: 12px 16px; font-size: 13px; }
+.error { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 28px; display: flex; flex-direction: column; gap: 12px; }
+.error b { color: var(--coral); }
+.vacio { font-size: 14px; color: var(--tenue); }
+.pie { font-family: var(--mono); font-size: 12px; color: var(--tenue); text-align: center; }
+
+/* Bloques con el formato de VentasTrack */
+:root { --vendido: #7AA2FF; --facturado: #C6F432; --facturable: #B794F6; }
+.c-ok { color: var(--acento); }
+.c-warn { color: var(--ambar); }
+.c-bad { color: var(--coral); }
+.c-mes { color: var(--vendido); }
+.relleno.c-ok { background: var(--acento); }
+.relleno.c-warn { background: var(--ambar); }
+.relleno.c-bad { background: var(--coral); }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.k { background: var(--suave); border: 1px solid var(--borde); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.k.b-ok { border-color: rgba(198, 244, 50, .35); }
+.k.b-bad { border-color: rgba(255, 138, 122, .4); }
+.k.k-ancho { grid-column: span 2; }
+.k-rot { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--tenue); }
+.k-val { font-family: var(--mono); font-size: 22px; font-weight: 500; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-val.pe { color: var(--ambar); }
+.k-sub { font-size: 12px; color: var(--tenue); }
+.avance { background: var(--suave); border: 1px solid var(--borde); border-radius: 6px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.avance .titulo-sec b { font-size: 15px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--tenue); }
+.chips b { font-family: var(--mono); font-weight: 500; color: var(--tinta); }
+.chips b.c-ok { color: var(--acento); } .chips b.c-warn { color: var(--ambar); } .chips b.c-bad { color: var(--coral); }
+.composicion { display: flex; height: 12px; border-radius: 2px; overflow: hidden; gap: 2px; background: var(--pista); }
+.bf { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.bf > div { background: var(--suave); border-radius: 6px; border-left: 3px solid; padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; }
+.vend { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; }
+.v { background: var(--suave); border: 1px solid var(--borde); border-left: 3px solid; border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.v-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.v-cab > div:first-child { display: flex; flex-direction: column; gap: 2px; }
+.v-der { display: flex; align-items: center; gap: 12px; text-align: right; }
+.infl { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 13px; color: var(--tenue); }
+.infl input { width: 76px; font: inherit; color: var(--tinta); background: var(--suave); border: 1px solid var(--acento); border-radius: 6px; padding: 8px 10px; min-height: 40px; text-align: right; }
+.graf3 .mes { gap: 2px; }
+.graf3 .b, .graf3 .pila { width: 28%; }
+.graf .b.aj { background: var(--ambar); }
+.graf .vars em { flex: 0 0 64px; font-style: normal; font-size: 11px; color: var(--tenue); text-align: left; }
+.graf .vars { padding-left: 0; }
+.graf3 .etis { padding-left: 76px; }
+.graf3 .barras { padding-left: 76px; }
+@media (max-width: 640px) { .k.k-ancho { grid-column: auto; } .vend { grid-template-columns: 1fr; } }
+
+@media (max-width: 640px) {
+  .tarjeta { padding: 20px; }
+  .n52 { font-size: 44px; }
+  .n34 { font-size: 30px; }
+}
+
+/* ---------- Vista semáforo ---------- */
+:root { --verde: #C6F432; --amarillo: #FFB547; --rojo: #FF5C5C; --apagado: #2A3340; }
+.s-verde { --s: var(--verde); }
+.s-amarillo { --s: var(--amarillo); }
+.s-rojo { --s: var(--rojo); }
+.s-gris { --s: #5B6675; }
+a.enlace { color: var(--tinta); text-decoration: none; display: inline-flex; align-items: center; min-height: 40px; }
+a.enlace:hover { border-color: var(--acento); color: var(--acento); }
+.foco { width: 10px; height: 10px; border-radius: 50%; background: var(--s); display: inline-block; flex: none; }
+
+.resumen { display: flex; flex-wrap: wrap; align-items: center; gap: 24px 32px; background: var(--tarjeta); border: 1px solid var(--borde); border-left: 4px solid var(--s); border-radius: 0; padding: 24px 28px; }
+.semaforo { display: flex; flex-direction: column; gap: 8px; background: #0A0E13; border: 1px solid var(--borde); border-radius: 14px; padding: 10px; }
+.semaforo i { width: 26px; height: 26px; border-radius: 50%; background: var(--apagado); }
+.resumen.s-rojo .semaforo .l-r { background: var(--rojo); }
+.resumen.s-amarillo .semaforo .l-a { background: var(--amarillo); }
+.resumen.s-verde .semaforo .l-v { background: var(--verde); }
+.res-txt { flex: 1 1 320px; display: flex; flex-direction: column; gap: 6px; }
+.res-txt .sup { font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--tenue); }
+.res-txt h2 { font-size: 28px; font-weight: 700; letter-spacing: -.01em; color: var(--s); }
+.res-txt p { margin: 0; color: var(--tenue); font-size: 14px; }
+.cuentas { display: flex; gap: 10px; flex-wrap: wrap; }
+.cuenta { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 92px; background: var(--suave); border: 1px solid var(--borde); border-radius: 6px; padding: 12px 14px; font-size: 12px; color: var(--tenue); }
+.cuenta .num { font-size: 28px; color: var(--tinta); line-height: 1; }
+
+.grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+.luz { background: var(--tarjeta); border: 1px solid var(--borde); border-top: 3px solid var(--s); border-radius: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.luz.s-rojo { border-color: rgba(255, 92, 92, .45); border-top-color: var(--rojo); }
+.luz-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.luz-grupo { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--tenue); }
+.luz-estado { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--s); }
+.luz h3 { font-size: 15px; font-weight: 600; }
+.luz-val { font-family: var(--mono); font-size: 34px; font-weight: 500; letter-spacing: -.02em; color: var(--s); line-height: 1.1; }
+.luz.s-gris .luz-val { color: var(--tenue); }
+.luz-ref { margin: 0; font-size: 13px; color: var(--tenue); }
+.luz-regla { margin: 0; font-family: var(--mono); font-size: 11px; color: var(--tenue); }
+.zonas { position: relative; display: flex; height: 8px; gap: 2px; margin: 6px 0 2px; }
+.zonas i { display: block; height: 100%; }
+.zonas .z-verde { background: rgba(198, 244, 50, .35); }
+.zonas .z-amarillo { background: rgba(255, 181, 71, .35); }
+.zonas .z-rojo { background: rgba(255, 92, 92, .35); }
+.zonas b { position: absolute; top: -5px; bottom: -5px; width: 3px; margin-left: -1px; background: var(--tinta); }
+@media (max-width: 640px) { .res-txt h2 { font-size: 22px; } .resumen { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <main class="pagina" id="app">
+    <div class="vacio">Cargando datos…</div>
+  </main>
+
+  <script src="config.js"></script>
+  <script>
+/* Lectura de las planillas y cálculos. Sin dependencias (corre también en Node para pruebas). */
+(function (root) {
+  'use strict';
+
+  var MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
+    'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  var MESES_CORTO = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+  var RUBROS = [
+    { key: 'caja', label: 'Caja y bancos', alias: ['caja y bancos', 'caja'], lado: 'activo', acido: true },
+    { key: 'cheques', label: 'Ch. en cartera', alias: ['ch en cartera', 'cheques en cartera'], lado: 'activo', acido: true },
+    { key: 'cobrar', label: 'Cuentas a cobrar', alias: ['cuentas a cobrar', 'deuda en la calle'], lado: 'activo', acido: true },
+    { key: 'stock', label: 'Stock (a valor compra)', alias: ['stock valor compra', 'stock a valor compra', 'stock al costo', 'stock costo', 'stock valor venta', 'stock a valor venta', 'stock'], lado: 'activo', acido: false },
+    { key: 'vehiculos', label: 'Vehículos', alias: ['vehiculos mm', 'vehiculos'], lado: 'activo', acido: false },
+    { key: 'inmueble', label: 'Inmueble Juncal 1871', alias: ['inmueble juncal 1871', 'inmueble'], lado: 'activo', acido: false },
+    { key: 'chpropio', label: 'Ch. propio pendiente', alias: ['ch propio pendiente', 'ch propio pen', 'cheque propio pendiente', 'ch propio'], lado: 'pasivo', acido: true },
+    { key: 'proveedores', label: 'Proveedores', alias: ['proveedores', 'deuda con proveedores'], lado: 'pasivo', acido: true },
+    { key: 'fiscales', label: 'Deudas fiscales', alias: ['deudas fiscales'], lado: 'pasivo', acido: false },
+    { key: 'prestamos', label: 'Préstamos bancarios', alias: ['prestamos bancarios'], lado: 'pasivo', acido: false },
+    { key: 'dividendos', label: 'Dividendos y fondo líquido pendiente', alias: ['dividendos y fondo liquido pendiente', 'dividendos'], lado: 'pasivo', acido: false },
+    { key: 'empleados', label: 'Deudas con los empleados', alias: ['deudas con los empleados', 'deudas con empleados'], lado: 'pasivo', acido: false },
+    { key: 'hipotecarias', label: 'Deudas hipotecarias', alias: ['deudas hipotecarias'], lado: 'pasivo', acido: false },
+    { key: 'socios', label: 'Deudas con los socios', alias: ['deudas con los socios', 'deudas con socios'], lado: 'pasivo', acido: false }
+  ];
+
+  function norm(s) {
+    return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
+
+  // CSV (RFC 4180): comillas, comas dentro de comillas, saltos CRLF.
+  function parseCSV(text) {
+    var rows = [], row = [], field = '', inQ = false, i = 0, c;
+    text = String(text || '').replace(/^﻿/, '');
+    while (i < text.length) {
+      c = text[i];
+      if (inQ) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+          inQ = false; i++; continue;
+        }
+        field += c; i++; continue;
+      }
+      if (c === '"') { inQ = true; i++; continue; }
+      if (c === ',') { row.push(field); field = ''; i++; continue; }
+      if (c === '\r') { i++; continue; }
+      if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+      field += c; i++;
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(function (r) { return r.some(function (v) { return String(v).trim() !== ''; }); });
+  }
+
+  // Importes de VentasTrack: mismo criterio que usa VentasTrack, para que los totales coincidan.
+  function parseAmt(raw) {
+    if (typeof raw === 'number') return raw;
+    var s = String(raw == null ? '' : raw).trim().replace(/[$\s\r]/g, '').replace(/[−–]/g, '-');
+    if (!s || s === '-') return null;
+    var neg = false;
+    if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1, -1); }
+    if (s.slice(-1) === '-') { neg = true; s = s.slice(0, -1); }
+    if (s[0] === '-') { neg = !neg; s = s.slice(1); }
+    if (!s) return null;
+    if (s.indexOf(',') !== -1 && s.indexOf('.') === -1) s = s.replace(',', '.');
+    else if (s.indexOf(',') !== -1 && s.indexOf('.') !== -1) s = s.replace(/\./g, '').replace(',', '.');
+    else s = s.replace(/\./g, '');
+    var v = parseFloat(s);
+    if (!isFinite(v)) return null;
+    return neg ? -v : v;
+  }
+
+  // Importes de la planilla del tablero ("12.600.000", "1.234,56", con $ o negativos).
+  function parseNum(v) {
+    if (v == null) return null;
+    if (typeof v === 'number') return isFinite(v) ? v : null;
+    var s = String(v).trim();
+    if (!s || s === '-' || s === '—') return null;
+    var neg = false;
+    if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1, -1); }
+    s = s.replace(/[$\s ]/g, '');
+    if (s[0] === '-' || s[0] === '−') { neg = true; s = s.slice(1); }
+    var lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
+    if (lastDot > -1 && lastComma > -1) {
+      s = lastComma > lastDot ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    } else if (lastComma > -1) {
+      s = /^\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, '') : s.replace(',', '.');
+    } else if (lastDot > -1) {
+      if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    }
+    if (!/^\d*\.?\d+$/.test(s)) return null;
+    var n = Number(s);
+    return isFinite(n) ? (neg ? -n : n) : null;
+  }
+
+  function mkDate(y, m, d) {
+    if (y < 100) y += 2000;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    return { y: y, m: m, d: d, key: y + '-' + pad(m) + '-' + pad(d), mes: y + '-' + pad(m) };
+  }
+  // Fechas dd/mm/aaaa o aaaa-mm-dd (ignora la hora).
+  function parseDate(v) {
+    var s = String(v == null ? '' : v).trim().split(/[ T]/)[0];
+    var m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+    if (m) return mkDate(+m[3], +m[2], +m[1]);
+    m = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+    if (m) return mkDate(+m[1], +m[2], +m[3]);
+    return null;
+  }
+
+  // "Octubre", "oct", "10", "setiembre" → 0..11
+  function mesIndice(v) {
+    var n = norm(v);
+    if (!n) return -1;
+    if (/^\d{1,2}$/.test(n)) { var k = +n; return k >= 1 && k <= 12 ? k - 1 : -1; }
+    if (n === 'setiembre' || n === 'set') return 8;
+    for (var i = 0; i < 12; i++) {
+      if (n === norm(MESES[i]) || n === norm(MESES_CORTO[i])) return i;
+    }
+    return -1;
+  }
+
+  // Mes "aaaa-mm" a partir de "2026-10", "10/2026", "octubre 2026" o una fecha.
+  function parseMes(v) {
+    var s = String(v == null ? '' : v).trim(), m;
+    if ((m = s.match(/^(\d{4})[\/\-.](\d{1,2})$/))) return m[1] + '-' + pad(+m[2]);
+    if ((m = s.match(/^(\d{1,2})[\/\-.](\d{4})$/))) return m[2] + '-' + pad(+m[1]);
+    var d = parseDate(s);
+    if (d) return d.mes;
+    var n = norm(s), y = n.match(/\d{4}/);
+    if (y) {
+      var palabras = n.replace(/\d{4}/, '').trim();
+      var i = mesIndice(palabras);
+      if (i > -1) return y[0] + '-' + pad(i + 1);
+    }
+    return null;
+  }
+
+  function findCol(headers, aliases) {
+    var h = headers.map(norm), i, j;
+    for (i = 0; i < aliases.length; i++) { j = h.indexOf(aliases[i]); if (j > -1) return j; }
+    for (i = 0; i < aliases.length; i++) {
+      for (j = 0; j < h.length; j++) if (h[j].indexOf(aliases[i]) === 0) return j;
+    }
+    return -1;
+  }
+  function esColAnio(h) { var n = norm(h); return n === 'ano' || n === 'anio' || n === 'year'; }
+  function falta(pest, col) { throw new Error('En la pestaña ' + pest + ' no se encontró la columna "' + col + '".'); }
+
+  /* ---------- VentasTrack ---------- */
+
+  // Ventas: Fecha | Vendedor | Cliente | Importe (una fila por venta)
+  function leerVentas(rows) {
+    if (!rows || !rows.length) return [];
+    var h = rows[0];
+    var cF = findCol(h, ['fecha', 'date']), cV = findCol(h, ['vendedor', 'seller']);
+    var cC = findCol(h, ['cliente', 'client']), cI = findCol(h, ['importe', 'amount', 'monto', 'total']);
+    if (cF < 0) falta('Ventas (VentasTrack)', 'Fecha');
+    if (cV < 0) falta('Ventas (VentasTrack)', 'Vendedor');
+    if (cI < 0) falta('Ventas (VentasTrack)', 'Importe');
+    var out = [];
+    rows.slice(1).forEach(function (r) {
+      var f = parseDate(r[cF]), vend = String(r[cV] || '').trim(), imp = parseAmt(r[cI]);
+      // Mismo filtro que VentasTrack: con vendedor, importe distinto de cero y fecha válida.
+      if (!f || !vend || !imp) return;
+      out.push({ fecha: f, vendedor: vend, cliente: cC > -1 ? String(r[cC] || '').trim() : '', importe: imp });
+    });
+    return out;
+  }
+
+  // Objetivos: Vendedor | Año | Enero | Febrero | ...  →  objetivo por vendedor y por mes ("2026-10")
+  function leerObjetivos(rows, anioPorDefecto) {
+    var out = { vendedores: [], porVendedor: {} };
+    if (!rows || !rows.length) return out;
+    var h = rows[0], cV = findCol(h, ['vendedor', 'seller']), cA = -1, cols = [];
+    if (cV < 0) falta('Objetivos (VentasTrack)', 'Vendedor');
+    h.forEach(function (x, i) {
+      if (i === cV) return;
+      if (esColAnio(x)) { cA = i; return; }
+      var mi = mesIndice(x);
+      if (mi > -1) cols.push({ i: i, m: mi });
+    });
+    rows.slice(1).forEach(function (r) {
+      var vend = String(r[cV] || '').trim();
+      if (!vend) return;
+      var y = cA > -1 ? parseInt(String(r[cA] || '').replace(/[^\d]/g, ''), 10) : NaN;
+      if (!y) y = anioPorDefecto;
+      if (out.vendedores.indexOf(vend) < 0) out.vendedores.push(vend);
+      if (!out.porVendedor[vend]) out.porVendedor[vend] = {};
+      cols.forEach(function (c) {
+        var v = parseAmt(r[c.i]);
+        if (v > 0) out.porVendedor[vend][y + '-' + pad(c.m + 1)] = v;
+      });
+    });
+    return out;
+  }
+
+  /* Facturación: Mes | Año | Facturado | Facturable.
+     La facturación del mes es Facturado + Facturable (el facturable solo tiene valor en el mes vigente). */
+  function leerFacturacion(rows, anioPorDefecto) {
+    var out = { total: {}, facturado: {}, facturable: {} };
+    if (!rows || !rows.length) return out;
+    var h = rows[0], cM = -1, cA = -1, cF = -1, cL = -1;
+    h.forEach(function (x, i) {
+      var n = norm(x);
+      if (esColAnio(x)) cA = i;
+      else if (cM < 0 && /^(mes|month)/.test(n)) cM = i;
+      else if (cL < 0 && /(facturable|billable)/.test(n)) cL = i;
+      else if (cF < 0 && /(facturado|billed)/.test(n)) cF = i;
+    });
+    if (cM < 0) falta('Facturación (VentasTrack)', 'Mes');
+    if (cF < 0) falta('Facturación (VentasTrack)', 'Facturado');
+    rows.slice(1).forEach(function (r) {
+      var mi = mesIndice(r[cM]);
+      if (mi < 0) return;
+      var y = cA > -1 ? parseInt(String(r[cA] || '').replace(/[^\d]/g, ''), 10) : NaN;
+      if (!y) y = anioPorDefecto;
+      var fa = parseAmt(r[cF]), fl = cL > -1 ? parseAmt(r[cL]) : null;
+      if (fa == null && fl == null) return; // celdas vacías: mes sin dato
+      var k = y + '-' + pad(mi + 1);
+      out.facturado[k] = fa || 0;
+      out.facturable[k] = fl || 0;
+      out.total[k] = (fa || 0) + (fl || 0);
+    });
+    return out;
+  }
+
+  // Feriados: una fecha por fila
+  function leerFeriados(rows) {
+    var out = {};
+    if (!rows || !rows.length) return out;
+    var c = findCol(rows[0], ['fecha', 'date']);
+    rows.forEach(function (r, i) {
+      var f = parseDate(c > -1 ? r[c] : r[0]);
+      if (f) out[f.key] = true;
+      else if (i === 0) return; // encabezado
+    });
+    return out;
+  }
+
+  /* ---------- Planilla del tablero ---------- */
+
+  function leerEquilibrio(rows) {
+    var out = {};
+    if (!rows || !rows.length) return out;
+    var cM = findCol(rows[0], ['mes']), cP = findCol(rows[0], ['punto de equilibrio', 'equilibrio', 'pe']);
+    if (cM < 0 || cP < 0) return out;
+    rows.slice(1).forEach(function (r) {
+      var mes = parseMes(r[cM]), v = parseNum(r[cP]);
+      if (mes && v) out[mes] = v;
+    });
+    return out;
+  }
+
+  function leerBalance(rows) {
+    if (!rows || !rows.length) return [];
+    var cf = findCol(rows[0], ['fecha']);
+    if (cf < 0) falta('BALANCE', 'Fecha');
+    var cols = {}, faltan = [];
+    RUBROS.forEach(function (r) {
+      cols[r.key] = findCol(rows[0], r.alias);
+      if (cols[r.key] < 0) faltan.push(r.label);
+    });
+    if (faltan.length) throw new Error('En la pestaña BALANCE no se encontró la columna: ' + faltan.join(', ') + '.');
+    var out = [];
+    rows.slice(1).forEach(function (r) {
+      var f = parseDate(r[cf]);
+      if (!f) return;
+      var vals = {}, alguno = false;
+      RUBROS.forEach(function (ru) {
+        var n = parseNum(r[cols[ru.key]]);
+        if (n != null) alguno = true;
+        vals[ru.key] = n || 0;
+      });
+      if (alguno) out.push({ fecha: f, vals: vals });
+    });
+    return out.sort(function (a, b) { return a.fecha.key < b.fecha.key ? -1 : a.fecha.key > b.fecha.key ? 1 : 0; });
+  }
+
+  function etiquetaTramo(h) {
+    var t = String(h || '').trim();
+    if (/\d\s*$/.test(t) && !/d[ií]as\s*$/i.test(t)) t += ' días';
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+
+  /* DEUDA_VENCIMIENTOS: Fecha | Menos de 30 | 30 a 45 | 45 a 60 | Mas de 60 | (Total opcional)
+     Los tramos salen de los encabezados, en el orden de la planilla. Usa el último corte. */
+  function leerVencimientos(rows) {
+    if (!rows || !rows.length) return null;
+    var cf = findCol(rows[0], ['fecha']);
+    if (cf < 0) falta('DEUDA_VENCIMIENTOS', 'Fecha');
+    var tramos = [];
+    rows[0].forEach(function (h, i) {
+      var n = norm(h);
+      if (i === cf || !n || n.indexOf('total') === 0 || n.indexOf('observ') === 0) return;
+      tramos.push({ col: i, label: etiquetaTramo(h) });
+    });
+    if (!tramos.length) throw new Error('La pestaña DEUDA_VENCIMIENTOS no tiene columnas de tramos.');
+    var ultimo = null;
+    rows.slice(1).forEach(function (r) {
+      var f = parseDate(r[cf]);
+      if (!f) return;
+      var vals = [], alguno = false;
+      tramos.forEach(function (t) { var x = parseNum(r[t.col]); if (x != null) alguno = true; vals.push(x || 0); });
+      if (alguno && (!ultimo || f.key >= ultimo.fecha.key)) ultimo = { fecha: f, vals: vals };
+    });
+    if (!ultimo) return null;
+    var total = sum(ultimo.vals);
+    return {
+      fecha: ultimo.fecha, total: total,
+      tramos: tramos.map(function (t, i) { return { label: t.label, valor: ultimo.vals[i], pct: total ? ultimo.vals[i] / total : null }; })
+    };
+  }
+
+  function calcularBalance(fila) {
+    if (!fila) return null;
+    var items = RUBROS.map(function (r) {
+      return { key: r.key, label: r.label, lado: r.lado, acido: r.acido, valor: fila.vals[r.key] };
+    });
+    function tot(fn) { return sum(items.filter(fn).map(function (x) { return x.valor; })); }
+    var totA = tot(function (x) { return x.lado === 'activo'; });
+    var totP = tot(function (x) { return x.lado === 'pasivo'; });
+    var acA = tot(function (x) { return x.lado === 'activo' && x.acido; });
+    var acP = tot(function (x) { return x.lado === 'pasivo' && x.acido; });
+    return {
+      fecha: fila.fecha, items: items,
+      totalActivo: totA, totalPasivo: totP, balance: totA - totP, balanceIdx: totP ? totA / totP : null,
+      acidoActivo: acA, acidoPasivo: acP, acido: acA - acP, acidoIdx: acP ? acA / acP : null,
+      stock: fila.vals.stock, calle: fila.vals.cobrar, proveedores: fila.vals.proveedores
+    };
+  }
+
+  /* ---------- Calendario ---------- */
+
+  function diasDelMes(mes) { var p = mes.split('-'); return new Date(Date.UTC(+p[0], +p[1], 0)).getUTCDate(); }
+  // Días hábiles del mes: lunes a viernes que no son feriado.
+  function habiles(mes, feriados) {
+    var p = mes.split('-'), y = +p[0], m = +p[1], out = [];
+    for (var d = 1, n = diasDelMes(mes); d <= n; d++) {
+      var wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+      if (wd !== 0 && wd !== 6 && !feriados[mes + '-' + pad(d)]) out.push(d);
+    }
+    return out;
+  }
+
+  // Porcentaje entero, igual que VentasTrack: pct(12, 50) = 24
+  function pct(v, g) { return g ? Math.round(v / g * 100) : 0; }
+
+  /* Arma el modelo completo para un mes "aaaa-mm".
+     Misma lógica que VentasTrack:
+     - Solo entran los vendedores con objetivo cargado en el mes.
+     - Días hábiles: lunes a viernes menos feriados; en el mes en curso se cuentan hasta hoy.
+     - Avance = % del objetivo vs % de días hábiles transcurridos (en enteros).
+     - Backorder = vendido − (facturado + facturable). */
+  function calcular(t, mesPedido, opciones) {
+    opciones = opciones || {};
+    var hoy = opciones.hoy || new Date();
+    var anioHoy = hoy.getFullYear();
+    var mesHoy = anioHoy + '-' + pad(hoy.getMonth() + 1);
+    var avisos = [];
+
+    var ventas = leerVentas(t.ventas);
+    var obj = leerObjetivos(t.objetivos, anioHoy);
+    var factT = leerFacturacion(t.facturacion, anioHoy);
+    var feriados = {};
+    try { feriados = leerFeriados(t.feriados); } catch (e) { avisos.push(e.message); }
+    var equilibrio = {};
+    try { equilibrio = leerEquilibrio(t.equilibrio); } catch (e) { avisos.push(e.message); }
+
+    var meses = [mesHoy];
+    ventas.forEach(function (v) { if (meses.indexOf(v.fecha.mes) < 0) meses.push(v.fecha.mes); });
+    meses.sort().reverse();
+    var mes = mesPedido && meses.indexOf(mesPedido) > -1 ? mesPedido : mesHoy;
+    var esActual = mes === mesHoy;
+    var y = +mes.split('-')[0], mAct = +mes.split('-')[1];
+
+    // Días hábiles
+    var dHab = habiles(mes, feriados), twd = dHab.length;
+    var hastaDia = esActual ? hoy.getDate() : diasDelMes(mes);
+    var elWD = dHab.filter(function (d) { return d <= hastaDia; }).length;
+    var remWD = twd - elWD;
+    var mthPct = pct(elWD, twd);
+
+    // Vendedores con objetivo en el mes
+    var delMes = ventas.filter(function (v) { return v.fecha.mes === mes; });
+    var vendedores = obj.vendedores.filter(function (s) { return (obj.porVendedor[s][mes] || 0) > 0; }).map(function (s, i) {
+      var vs = delMes.filter(function (v) { return v.vendedor === s; });
+      var total = sum(vs.map(function (v) { return v.importe; }));
+      var goal = obj.porVendedor[s][mes];
+      var gap = goal - total;
+      var exp = twd ? Math.round(goal / twd * elWD) : 0;
+      return {
+        vendedor: s, idx: i, total: total, goal: goal, p: pct(total, goal), gap: gap,
+        diff: pct(total, goal) - mthPct, vsExp: total - exp,
+        dailyAvg: elWD ? Math.round(total / elWD) : 0,
+        dailyNeed: remWD ? Math.round(Math.max(0, gap) / remWD) : 0
+      };
+    });
+    if (!vendedores.length) avisos.push('No hay objetivos cargados en VentasTrack para ' + MESES[mAct - 1] + ' ' + y + '.');
+    var activos = {};
+    vendedores.forEach(function (r) { activos[r.vendedor] = true; });
+    var ventasActivas = delMes.filter(function (v) { return activos[v.vendedor]; });
+    var sinObjetivo = sum(delMes.filter(function (v) { return !activos[v.vendedor]; }).map(function (v) { return v.importe; }));
+    if (sinObjetivo) avisos.push('Hay ventas por ' + Math.round(sinObjetivo).toLocaleString('es-AR') + ' de vendedores sin objetivo en el mes: no se suman, igual que en VentasTrack.');
+
+    // Empresa
+    var tv = sum(vendedores.map(function (r) { return r.total; }));
+    var tg = sum(vendedores.map(function (r) { return r.goal; }));
+    var tp = pct(tv, tg), tgap = tg - tv;
+    var ultima = null;
+    ventasActivas.forEach(function (v) { if (!ultima || v.fecha.key > ultima.key) ultima = v.fecha; });
+    var ventaDia = esActual && ultima ? sum(ventasActivas.filter(function (v) { return v.fecha.key === ultima.key; }).map(function (v) { return v.importe; })) : 0;
+    var empresa = {
+      total: tv, objetivo: tg, p: tp, diff: tp - mthPct, gap: tgap,
+      ventaDia: ventaDia, fechaDia: esActual ? ultima : null,
+      dailyAvg: elWD ? Math.round(tv / elWD) : 0,
+      dailyNeed: tg && remWD ? Math.round(Math.max(0, tgap) / remWD) : 0,
+      vsExp: tv - (tg && twd ? Math.round(tg / twd * elWD) : 0),
+      proyeccion: elWD ? Math.round(tv / elWD * twd) : null
+    };
+
+    // Facturación: facturado + facturable; backorder = vendido − facturación
+    var billed = factT.facturado[mes] || 0, billable = factT.facturable[mes] || 0;
+    var fTotal = billed + billable;
+    var backorder = tv - fTotal;
+    var pe = equilibrio[mes] || opciones.puntoEquilibrio || null;
+    var facturacion = {
+      facturado: billed, facturable: billable, total: fTotal, hayDato: factT.total[mes] != null,
+      backorder: backorder, boPct: pct(Math.max(0, backorder), tv),
+      pFacturado: pct(billed, tv), pFacturable: pct(billable, tv),
+      p: pct(fTotal, tg), diff: pct(fTotal, tg) - mthPct, gap: tg - fTotal,
+      vsExp: fTotal - (tg && twd ? Math.round(tg / twd * elWD) : 0),
+      dailyAvg: elWD ? Math.round(fTotal / elWD) : 0,
+      dailyNeed: tg && remWD ? Math.round(Math.max(0, tg - fTotal) / remWD) : 0,
+      proyeccion: elWD ? Math.round(fTotal / elWD * twd) : null,
+      pe: pe, peFaltan: pe ? Math.max(pe - fTotal, 0) : null
+    };
+    facturacion.peAlcanzable = pe && facturacion.proyeccion != null ? facturacion.proyeccion >= pe : null;
+
+    // Comparativa anual: año anterior, año anterior ajustado por inflación y año actual
+    var infl = opciones.inflacion != null && isFinite(opciones.inflacion) ? opciones.inflacion : 0;
+    var anual = [], maxV = 0, tot = { act: 0, ant: 0, aj: 0, n: 0 };
+    for (var m = 1; m <= 12; m++) {
+      var kA = y + '-' + pad(m), kP = (y - 1) + '-' + pad(m);
+      var ant = factT.total[kP] != null ? factT.total[kP] : null;
+      var it = { mes: m, corto: MESES_CORTO[m - 1], nombre: MESES[m - 1], anterior: ant,
+        ajustado: ant != null ? Math.round(ant * (1 + infl)) : null, actual: null, proyeccion: null, estado: 'futuro' };
+      if (m < mAct || (m === mAct && !esActual)) {
+        it.actual = factT.total[kA] != null ? factT.total[kA] : null;
+        it.estado = it.actual != null ? 'cerrado' : 'sindatos';
+      } else if (m === mAct) {
+        it.actual = facturacion.hayDato ? fTotal : null;
+        it.proyeccion = facturacion.hayDato ? facturacion.proyeccion : null;
+        it.estado = 'encurso';
+      }
+      var comp = it.estado === 'cerrado' ? it.actual : it.estado === 'encurso' ? it.proyeccion : null;
+      it.varNominal = comp != null && it.anterior ? comp / it.anterior - 1 : null;
+      it.varReal = comp != null && it.ajustado ? comp / it.ajustado - 1 : null;
+      if (it.estado === 'cerrado' && it.anterior != null) { tot.act += it.actual; tot.ant += it.anterior; tot.aj += it.ajustado; tot.n++; }
+      [it.anterior, it.ajustado, it.actual, it.proyeccion].forEach(function (v) { if (v != null && v > maxV) maxV = v; });
+      anual.push(it);
+    }
+    var hayAnterior = anual.some(function (x) { return x.anterior != null; });
+    if (!hayAnterior) avisos.push('Todavía no hay facturación de ' + (y - 1) + ' cargada en VentasTrack para la comparativa anual.');
+
+    var balance = [], bal = null, venc = null;
+    try { balance = leerBalance(t.balance); bal = calcularBalance(balance[balance.length - 1]); } catch (e) { avisos.push(e.message); }
+    try { if (t.vencimientos) venc = leerVencimientos(t.vencimientos); } catch (e) { avisos.push(e.message); }
+    if (venc && bal && bal.calle) {
+      venc.difBalance = venc.total - bal.calle;
+      venc.coincide = Math.abs(venc.difBalance) <= Math.max(1, bal.calle * 0.005);
+    }
+
+    return {
+      meses: meses, mes: mes, esActual: esActual,
+      mesNombre: MESES[mAct - 1] + ' ' + y, mesCorto: MESES_CORTO[mAct - 1] + ' ' + y,
+      totalDias: twd, transcurridos: elWD, restantes: remWD, mthPct: mthPct,
+      empresa: empresa, vendedores: vendedores, facturacion: facturacion,
+      anual: { anio: y, inflacion: infl, meses: anual, max: maxV, hayAnterior: hayAnterior,
+        cerrados: tot.n, ytdActual: tot.act, ytdAnterior: tot.ant, ytdAjustado: tot.aj,
+        varNominal: tot.ant ? tot.act / tot.ant - 1 : null, varReal: tot.aj ? tot.act / tot.aj - 1 : null },
+      balance: bal, vencimientos: venc,
+      avisos: avisos
+    };
+  }
+
+  var api = { parseCSV: parseCSV, parseAmt: parseAmt, parseNum: parseNum, parseDate: parseDate, parseMes: parseMes,
+    mesIndice: mesIndice, habiles: habiles, calcular: calcular, RUBROS: RUBROS, MESES: MESES };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.TableroCalc = api;
+})(this);
+  </script>
+  <script>
+/* Vista semáforo: cada indicador responde "¿estamos bien en esto?" con verde, amarillo o rojo. */
+(function () {
+  'use strict';
+  var CFG = window.TABLERO_CONFIG || {};
+  var C = window.TableroCalc;
+  var app = document.getElementById('app');
+
+  /* Indicadores del semáforo y sus umbrales por defecto.
+     Los umbrales se cargan en la pestaña UMBRALES de la planilla del tablero; estos valores
+     se usan solo si la pestaña no está publicada o si una fila falta o está mal cargada.
+     sentido "mayor" = más es mejor · "menor" = menos es mejor. */
+  var DEF = [
+    { key: 'ventaVsRitmo', nombre: 'Venta vs. ritmo del mes', alias: ['venta vs ritmo', 'venta'], sentido: 'mayor', verde: 0, rojo: -10 },
+    { key: 'facturacionVsRitmo', nombre: 'Facturación vs. ritmo del mes', alias: ['facturacion vs ritmo', 'facturacion'], sentido: 'mayor', verde: 0, rojo: -10 },
+    { key: 'equilibrio', nombre: 'Proyección vs. punto de equilibrio', alias: ['punto de equilibrio', 'equilibrio', 'proyeccion'], sentido: 'mayor', verde: 110, rojo: 100 },
+    { key: 'crecimientoReal', nombre: 'Crecimiento real vs. año anterior', alias: ['crecimiento real', 'crecimiento'], sentido: 'mayor', verde: 0, rojo: -5 },
+    { key: 'backorder', nombre: 'Backorder', alias: ['backorder'], sentido: 'menor', verde: 10, rojo: 20 },
+    { key: 'deudaVencida', nombre: 'Deuda en la calle a más de 60 días', alias: ['deuda en la calle', 'deuda vencida', 'deuda'], sentido: 'menor', verde: 10, rojo: 20 },
+    { key: 'acido', nombre: 'Liquidez ácida', alias: ['liquidez acida', 'balance acido', 'acido'], sentido: 'mayor', verde: 1.2, rojo: 1 },
+    { key: 'solvencia', nombre: 'Solvencia', alias: ['solvencia'], sentido: 'mayor', verde: 1.5, rojo: 1 }
+  ];
+  var U = {}, ORIGEN_U = 'defecto';
+
+  function norm(s) {
+    return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  // [a, b] interno: "mayor" → [rojo, verde]; "menor" → [verde, rojo]
+  function par(def, verde, rojo) { return def.sentido === 'mayor' ? [rojo, verde] : [verde, rojo]; }
+
+  /* Pestaña UMBRALES: Indicador | Mejor si | Límite verde | Límite rojo | Unidad | Qué mide
+     Solo se leen "Indicador", "Límite verde" y "Límite rojo"; el resto es ayuda para quien carga. */
+  function aplicarUmbrales(rows) {
+    var avisos = [], leidos = 0;
+    U = {}; ORIGEN_U = 'defecto';
+    DEF.forEach(function (d) { U[d.key] = par(d, d.verde, d.rojo); });
+    if (!rows || !rows.length) return avisos;
+    var h = rows[0].map(norm);
+    function col(re) { for (var i = 0; i < h.length; i++) if (re.test(h[i])) return i; return -1; }
+    var cI = col(/^indicador/), cV = col(/verde/), cR = col(/rojo/);
+    if (cI < 0 || cV < 0 || cR < 0) {
+      avisos.push('La pestaña UMBRALES necesita las columnas "Indicador", "Límite verde" y "Límite rojo". Se usan los umbrales por defecto.');
+      return avisos;
+    }
+    function num(v) { return C.parseNum(String(v == null ? '' : v).replace(/%|pts?|puntos|veces|x$/gi, '').trim()); }
+    rows.slice(1).forEach(function (r) {
+      var n = norm(r[cI]);
+      if (!n) return;
+      var d = null;
+      DEF.forEach(function (x) { if (!d && (norm(x.nombre) === n)) d = x; });
+      DEF.forEach(function (x) { if (!d && x.alias.some(function (a) { return n.indexOf(a) === 0; })) d = x; });
+      if (!d) { avisos.push('UMBRALES: no reconozco el indicador "' + r[cI] + '".'); return; }
+      var v = num(r[cV]), ro = num(r[cR]);
+      if (v == null || ro == null) { avisos.push('UMBRALES: a "' + d.nombre + '" le falta un límite. Se usa el valor por defecto.'); return; }
+      var ok = d.sentido === 'mayor' ? ro <= v : v <= ro;
+      if (!ok) {
+        avisos.push('UMBRALES: en "' + d.nombre + '" el límite verde tiene que ser ' + (d.sentido === 'mayor' ? 'mayor o igual' : 'menor o igual') +
+          ' que el rojo (en este indicador, ' + (d.sentido === 'mayor' ? 'más' : 'menos') + ' es mejor). Se usa el valor por defecto.');
+        return;
+      }
+      U[d.key] = par(d, v, ro); leidos++;
+    });
+    if (leidos) ORIGEN_U = leidos === DEF.length ? 'planilla' : 'mixto';
+    return avisos;
+  }
+
+  var vt = CFG.ventastrack || {}, tb = CFG.tablero || {};
+  function urlVT(tab) {
+    return 'https://docs.google.com/spreadsheets/d/e/' + vt.pubId + '/pub?gid=' + (vt.gid || {})[tab] + '&single=true&output=csv';
+  }
+  var FUENTES = [
+    { key: 'ventas', nombre: 'Ventas (VentasTrack)', url: urlVT('ventas'), obligatoria: true },
+    { key: 'objetivos', nombre: 'Objetivos (VentasTrack)', url: urlVT('objetivos'), obligatoria: true },
+    { key: 'facturacion', nombre: 'Facturación (VentasTrack)', url: urlVT('facturacion'), obligatoria: true },
+    { key: 'feriados', nombre: 'Feriados (VentasTrack)', url: urlVT('feriados'), obligatoria: false },
+    { key: 'balance', nombre: 'BALANCE', url: tb.balance, obligatoria: false },
+    { key: 'vencimientos', nombre: 'DEUDA_VENCIMIENTOS', url: tb.vencimientos, obligatoria: false },
+    { key: 'equilibrio', nombre: 'OBJETIVOS (punto de equilibrio)', url: tb.equilibrio, obligatoria: false },
+    { key: 'umbrales', nombre: 'UMBRALES', url: tb.umbrales, obligatoria: false }
+  ].filter(function (f) { return f.url; });
+
+  var estado = { tablas: null, mes: null, leido: null, error: null, avisos: [] };
+
+  // ---------- Formato ----------
+  var nf0 = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
+  var nf1 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var nf2 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function M(v) { return v == null || !isFinite(v) ? '—' : (v < 0 ? '−$' : '$') + nf1.format(Math.abs(v) / 1e6) + 'M'; }
+  function P1(n) { return n == null || !isFinite(n) ? '—' : nf1.format(n) + '%'; }
+  function SP(n, dec) { if (n == null || !isFinite(n)) return '—'; return (n > 0 ? '+' : n < 0 ? '−' : '') + (dec ? nf1 : nf0).format(Math.abs(n)); }
+  function X(v) { return v == null || !isFinite(v) ? '—' : nf2.format(v) + 'x'; }
+  function F(d) { return d ? (d.d < 10 ? '0' : '') + d.d + '/' + (d.m < 10 ? '0' : '') + d.m : '—'; }
+  function hora(t) { return t ? t.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : ''; }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // ---------- Lectura (igual que el tablero) ----------
+  function leer(f) {
+    var u = f.url + (f.url.indexOf('?') > -1 ? '&' : '?') + '_t=' + Date.now();
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 20000) : null;
+    return fetch(u, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined }).then(function (r) {
+      clearTimeout(timer);
+      if (!r.ok) throw new Error('No se pudo leer la pestaña ' + f.nombre + ' (error ' + r.status + ').');
+      return r.text();
+    }).then(function (txt) {
+      if (/^\s*<(!doctype|html)/i.test(txt)) throw new Error('La pestaña ' + f.nombre + ' no devolvió un CSV. Revisá que esté publicada en la web.');
+      return C.parseCSV(txt);
+    }, function (e) {
+      if (e && /pestaña/.test(e.message)) throw e;
+      throw new Error('No se pudo conectar con la pestaña ' + f.nombre + '. Revisá la conexión.');
+    });
+  }
+
+  function cargar() {
+    if (window.SEMAFORO_DEMO) {
+      estado.tablas = window.SEMAFORO_DEMO; estado.avisos = []; estado.leido = new Date(); estado.error = null;
+      return Promise.resolve().then(dibujar);
+    }
+    var avisos = [];
+    return Promise.all(FUENTES.map(function (f) {
+      var p = leer(f);
+      return f.obligatoria ? p : p.catch(function (e) { avisos.push(e.message); return null; });
+    })).then(function (res) {
+      var t = {};
+      FUENTES.forEach(function (f, i) { t[f.key] = res[i]; });
+      estado.tablas = t; estado.avisos = avisos; estado.leido = new Date(); estado.error = null;
+    }).catch(function (e) {
+      estado.error = e.message || String(e);
+    }).then(dibujar);
+  }
+
+  // ---------- Reglas del semáforo ----------
+  /* "mayor": más es mejor.  u = [a, b]  →  menos de a rojo · de a a b amarillo · desde b verde.
+     "menor": menos es mejor. u = [a, b]  →  hasta a verde · hasta b amarillo · más de b rojo. */
+  function color(valor, u, sentido) {
+    if (valor == null || !isFinite(valor) || !u) return 'gris';
+    if (sentido === 'menor') return valor <= u[0] ? 'verde' : valor <= u[1] ? 'amarillo' : 'rojo';
+    return valor < u[0] ? 'rojo' : valor < u[1] ? 'amarillo' : 'verde';
+  }
+  function regla(u, sentido, unidad) {
+    if (!u) return '';
+    function f(v) { return unidad === 'x' ? nf2.format(v) + 'x' : unidad === 'pts' ? SP(v) + ' pts' : (v < 0 ? '−' : '') + nf0.format(Math.abs(v)) + '%'; }
+    return sentido === 'menor'
+      ? 'Verde hasta ' + f(u[0]) + ' · rojo más de ' + f(u[1])
+      : 'Verde desde ' + f(u[1]) + ' · rojo menos de ' + f(u[0]);
+  }
+
+  function indicadores(d) {
+    var e = d.empresa, f = d.facturacion, a = d.anual, b = d.balance, v = d.vencimientos, out = [];
+
+    // 1. Venta vs ritmo del mes (puntos de avance contra % del mes transcurrido)
+    out.push({
+      grupo: 'Comercial', titulo: 'Venta vs. ritmo del mes',
+      valor: e.objetivo ? SP(e.diff) + ' pts' : null,
+      ref: e.objetivo ? e.p + '% del objetivo con ' + d.mthPct + '% del mes · ' + M(e.total) + ' de ' + M(e.objetivo) : 'Sin objetivo cargado',
+      estado: e.objetivo ? color(e.diff, U.ventaVsRitmo, 'mayor') : 'gris',
+      n: e.diff, u: U.ventaVsRitmo, sentido: 'mayor', unidad: 'pts', escala: [-30, 20]
+    });
+
+    // 2. Facturación vs ritmo del mes
+    out.push({
+      grupo: 'Comercial', titulo: 'Facturación vs. ritmo del mes',
+      valor: e.objetivo && f.hayDato ? SP(f.diff) + ' pts' : null,
+      ref: f.hayDato ? f.p + '% del objetivo con ' + d.mthPct + '% del mes · ' + M(f.total) + ' facturado + facturable' : 'Sin facturación cargada para el mes',
+      estado: e.objetivo && f.hayDato ? color(f.diff, U.facturacionVsRitmo, 'mayor') : 'gris',
+      n: f.diff, u: U.facturacionVsRitmo, sentido: 'mayor', unidad: 'pts', escala: [-30, 20]
+    });
+
+    // 3. Punto de equilibrio: proyección al cierre (mes en curso) o total (mes cerrado)
+    var base = d.esActual ? f.proyeccion : f.total;
+    var pePct = f.pe && base != null && f.hayDato ? base / f.pe * 100 : null;
+    out.push({
+      grupo: 'Comercial', titulo: d.esActual ? 'Proyección vs. punto de equilibrio' : 'Facturación vs. punto de equilibrio',
+      valor: pePct != null ? nf0.format(pePct) + '%' : null,
+      ref: pePct != null ? (d.esActual ? 'Proyección ' : 'Facturado ') + M(base) + ' · PE ' + M(f.pe) : 'Falta facturación o punto de equilibrio',
+      estado: color(pePct, U.equilibrio, 'mayor'),
+      n: pePct, u: U.equilibrio, sentido: 'mayor', unidad: '%', escala: [60, 140]
+    });
+
+    // 4. Crecimiento real acumulado del año vs. año anterior ajustado por inflación
+    var real = a.varReal != null ? a.varReal * 100 : null;
+    out.push({
+      grupo: 'Comercial', titulo: 'Crecimiento real vs. ' + (a.anio - 1),
+      valor: real != null ? SP(real, true) + '%' : null,
+      ref: real != null ? 'Facturación de ' + a.cerrados + (a.cerrados === 1 ? ' mes cerrado' : ' meses cerrados') + ', ' + (a.anio - 1) + ' ajustado ' + nf0.format(a.inflacion * 100) + '%' : 'Sin facturación de ' + (a.anio - 1) + ' para comparar',
+      estado: color(real, U.crecimientoReal, 'mayor'),
+      n: real, u: U.crecimientoReal, sentido: 'mayor', unidad: '%', escala: [-25, 15]
+    });
+
+    // 5. Backorder: vendido que todavía no se facturó
+    var boOk = e.total > 0 && f.hayDato;
+    out.push({
+      grupo: 'Comercial', titulo: 'Backorder',
+      valor: boOk ? f.boPct + '%' : null,
+      ref: boOk ? M(Math.max(0, f.backorder)) + ' vendido sin facturar' : 'Sin ventas o facturación del mes',
+      estado: boOk ? color(f.boPct, U.backorder, 'menor') : 'gris',
+      n: f.boPct, u: U.backorder, sentido: 'menor', unidad: '%', escala: [0, 40]
+    });
+
+    // 6. Deuda en la calle vencida a más de 60 días (último tramo de la planilla)
+    var ult = v && v.tramos.length ? v.tramos[v.tramos.length - 1] : null;
+    var p60 = ult && ult.pct != null ? ult.pct * 100 : null;
+    out.push({
+      grupo: 'Financiero', titulo: 'Deuda en la calle · ' + (ult ? ult.label.toLowerCase() : 'más de 60 días'),
+      valor: p60 != null ? nf0.format(p60) + '%' : null,
+      ref: p60 != null ? M(ult.valor) + ' de ' + M(v.total) + ' · corte ' + F(v.fecha) : 'Sin datos de vencimientos',
+      estado: color(p60, U.deudaVencida, 'menor'),
+      n: p60, u: U.deudaVencida, sentido: 'menor', unidad: '%', escala: [0, 40]
+    });
+
+    // 7. Balance ácido como índice: (caja + cheques + cuentas a cobrar) / (proveedores + ch. propio)
+    out.push({
+      grupo: 'Financiero', titulo: 'Liquidez ácida',
+      valor: b && b.acidoIdx != null ? X(b.acidoIdx) : null,
+      ref: b ? 'Balance ácido ' + M(b.acido) + ' · corte ' + F(b.fecha) : 'Sin datos de balance',
+      estado: color(b && b.acidoIdx, U.acido, 'mayor'),
+      n: b && b.acidoIdx, u: U.acido, sentido: 'mayor', unidad: 'x', escala: [0.5, 2]
+    });
+
+    // 8. Solvencia: activo total / pasivo total
+    out.push({
+      grupo: 'Financiero', titulo: 'Solvencia',
+      valor: b && b.balanceIdx != null ? X(b.balanceIdx) : null,
+      ref: b ? 'Activo ' + M(b.totalActivo) + ' · pasivo ' + M(b.totalPasivo) : 'Sin datos de balance',
+      estado: color(b && b.balanceIdx, U.solvencia, 'mayor'),
+      n: b && b.balanceIdx, u: U.solvencia, sentido: 'mayor', unidad: 'x', escala: [0.5, 3]
+    });
+
+    out.forEach(function (it, i) { it.orden = i; it.regla = regla(it.u, it.sentido, it.unidad); });
+    return out;
+  }
+
+  // ---------- Piezas ----------
+  var NOMBRE = { rojo: 'Crítico', amarillo: 'Alerta', verde: 'En orden', gris: 'Sin dato' };
+  var ICONO = { rojo: '■', amarillo: '▲', verde: '●', gris: '○' };
+  var PESO = { rojo: 0, amarillo: 1, verde: 2, gris: 3 };
+
+  function zonas(it) {
+    if (!it.u || it.estado === 'gris') return '';
+    var lo = it.escala[0], hi = it.escala[1];
+    function pos(x) { return Math.max(0, Math.min(100, (x - lo) / (hi - lo) * 100)); }
+    var a = pos(it.u[0]), b = pos(it.u[1]);
+    var cols = it.sentido === 'menor' ? ['verde', 'amarillo', 'rojo'] : ['rojo', 'amarillo', 'verde'];
+    var m = pos(it.n);
+    return '<div class="zonas" aria-hidden="true">' +
+      '<i class="z-' + cols[0] + '" style="width:' + a + '%"></i>' +
+      '<i class="z-' + cols[1] + '" style="width:' + (b - a) + '%"></i>' +
+      '<i class="z-' + cols[2] + '" style="width:' + (100 - b) + '%"></i>' +
+      '<b style="left:' + m + '%"></b></div>';
+  }
+
+  function tarjeta(it) {
+    return '<article class="luz s-' + it.estado + '">' +
+      '<div class="luz-cab"><span class="luz-grupo">' + esc(it.grupo) + '</span>' +
+      '<span class="luz-estado"><span class="foco"></span>' + NOMBRE[it.estado] + '</span></div>' +
+      '<h3>' + esc(it.titulo) + '</h3>' +
+      '<div class="luz-val">' + (it.valor != null ? esc(it.valor) : '—') + '</div>' +
+      '<p class="luz-ref">' + esc(it.ref) + '</p>' +
+      zonas(it) +
+      (it.regla && it.estado !== 'gris' ? '<p class="luz-regla">' + esc(it.regla) + '</p>' : '') +
+      '</article>';
+  }
+
+  function resumen(lista, d) {
+    var cnt = { rojo: 0, amarillo: 0, verde: 0, gris: 0 };
+    lista.forEach(function (it) { cnt[it.estado]++; });
+    var general = cnt.rojo ? 'rojo' : cnt.amarillo ? 'amarillo' : cnt.verde ? 'verde' : 'gris';
+    var titular = {
+      rojo: cnt.rojo === 1 ? 'Hay 1 indicador en rojo' : 'Hay ' + cnt.rojo + ' indicadores en rojo',
+      amarillo: 'Sin rojos, ' + cnt.amarillo + (cnt.amarillo === 1 ? ' indicador' : ' indicadores') + ' en alerta',
+      verde: 'Todo en orden',
+      gris: 'Todavía no hay datos para evaluar'
+    }[general];
+    var foco = lista.filter(function (it) { return it.estado === 'rojo'; }).map(function (it) { return it.titulo; });
+    function cuenta(s) {
+      return '<div class="cuenta s-' + s + '"><span class="foco"></span><span class="num">' + cnt[s] + '</span><span>' + NOMBRE[s] + '</span></div>';
+    }
+    return '<section class="resumen s-' + general + '" aria-label="Estado general">' +
+      '<div class="semaforo" aria-hidden="true"><i class="l-r"></i><i class="l-a"></i><i class="l-v"></i></div>' +
+      '<div class="res-txt"><span class="sup">Estado general · ' + esc(d.mesNombre) + '</span>' +
+      '<h2>' + titular + '</h2>' +
+      (foco.length ? '<p>Mirar primero: ' + esc(foco.join(' · ')) + '</p>' : '<p>' + (d.esActual ? 'Día hábil ' + d.transcurridos + ' de ' + d.totalDias + ' (' + d.mthPct + '% del mes).' : 'Mes cerrado.') + '</p>') +
+      '</div><div class="cuentas">' + cuenta('rojo') + cuenta('amarillo') + cuenta('verde') + (cnt.gris ? cuenta('gris') : '') + '</div></section>';
+  }
+
+  function cabecera(d) {
+    var html = '<header class="cabecera"><div><div class="sup">Control de gestión · Semáforo</div><h1>' + esc(CFG.titulo || 'Tablero de Comando') + '</h1></div><div class="controles">';
+    if (d) {
+      html += '<select id="sel-mes" aria-label="Mes">' + d.meses.map(function (m) {
+        var p = m.split('-');
+        return '<option value="' + m + '"' + (m === d.mes ? ' selected' : '') + '>' + C.MESES[+p[1] - 1] + ' ' + p[0] + '</option>';
+      }).join('') + '</select>';
+    }
+    html += '<button id="btn-act" type="button">Actualizar</button><a class="pastilla enlace" href="detalle.html">Ver detalle →</a></div></header>';
+    return html;
+  }
+
+  function dibujar() {
+    var html = '';
+    if (estado.error) {
+      html = cabecera(null) + '<div class="error"><b>No se pudieron cargar los datos.</b><span>' + esc(estado.error) + '</span></div>';
+    } else if (!estado.tablas) {
+      html = '<div class="vacio">Cargando datos…</div>';
+    } else {
+      try {
+        var avU = aplicarUmbrales(estado.tablas.umbrales);
+        var d = C.calcular(estado.tablas, estado.mes, { puntoEquilibrio: CFG.puntoEquilibrio, inflacion: inflacion() / 100 });
+        estado.mes = d.mes;
+        var lista = indicadores(d).sort(function (x, y) { return PESO[x.estado] - PESO[y.estado] || x.orden - y.orden; });
+        var avisos = estado.avisos.concat(d.avisos, avU);
+        html = cabecera(d) +
+          (window.SEMAFORO_DEMO ? '<div class="aviso">Vista previa con datos de ejemplo. Publicada en Vercel, esta página lee las mismas planillas que el tablero.</div>' : '') +
+          resumen(lista, d) +
+          (avisos.length ? '<div class="aviso">' + avisos.map(esc).join('<br>') + '</div>' : '') +
+          '<section class="grilla">' + lista.map(tarjeta).join('') + '</section>' +
+          '<p class="pie">' + ({ planilla: 'Umbrales: pestaña UMBRALES de la planilla', mixto: 'Umbrales: pestaña UMBRALES (los que faltan, por defecto)', defecto: tb.umbrales ? 'Umbrales por defecto (revisá la pestaña UMBRALES)' : 'Umbrales por defecto (falta conectar la pestaña UMBRALES)' })[ORIGEN_U] + ' · ' +
+          'Comercial: VentasTrack · Financiero: planilla del tablero' + (estado.leido ? ' · Leído a las ' + hora(estado.leido) : '') + '</p>';
+      } catch (e) {
+        html = cabecera(null) + '<div class="error"><b>Hay un problema con los datos.</b><span>' + esc(e.message) + '</span></div>';
+      }
+    }
+    app.innerHTML = html;
+    var sel = document.getElementById('sel-mes');
+    if (sel) sel.addEventListener('change', function () { estado.mes = sel.value; dibujar(); });
+    var btn = document.getElementById('btn-act');
+    if (btn) btn.addEventListener('click', function () { btn.disabled = true; btn.textContent = 'Actualizando…'; cargar(); });
+  }
+
+  // Misma inflación que el tablero: la guardada desde el gráfico anual, o la de la configuración.
+  function inflacion() {
+    try { var s = localStorage.getItem('tablero.inflacion'); if (s != null && isFinite(+s)) return +s; } catch (e) {}
+    return +CFG.inflacion || 0;
+  }
+
+  cargar();
+  var min = +CFG.refrescoMinutos;
+  if (min > 0 && !window.SEMAFORO_DEMO) setInterval(cargar, min * 60000);
+})();
+  </script>
+</body>
+</html>

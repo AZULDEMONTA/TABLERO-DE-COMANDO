@@ -1,0 +1,1067 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tablero de Comando · Detalle</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+/* Estilo "Sala de control": fondo oscuro, acento verde lima, números monoespaciados. */
+:root {
+  color-scheme: dark;
+  --fondo: #0D1117;
+  --tarjeta: #151B23;
+  --suave: #0F141B;
+  --tinta: #E6EDF3;
+  --tenue: #9AA7B5;
+  --gris: #9AA7B5;
+  --borde: #242C38;
+  --linea: #1C232D;
+  --pista: #242C38;
+  --acento: #C6F432;
+  --acento-claro: #3B4757;
+  --acento-suave: rgba(198, 244, 50, .12);
+  --ambar: #FFB547;
+  --coral: #FF8A7A;
+  --mono: 'DM Mono', ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--fondo); }
+body { font-family: 'Space Grotesk', system-ui, sans-serif; color: var(--tinta); -webkit-font-smoothing: antialiased; }
+.pagina { max-width: 1240px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 24px; }
+.mono { font-family: var(--mono); }
+h1, h2, h3 { margin: 0; }
+
+.cabecera { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.cabecera .sup { font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--acento); }
+.cabecera h1 { font-size: 36px; font-weight: 700; letter-spacing: -.02em; margin-top: 6px; }
+.controles { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-family: var(--mono); font-size: 13px; color: var(--tenue); }
+.controles select, .controles button {
+  font: inherit; color: var(--tinta); background: var(--tarjeta);
+  border: 1px solid #2A3340; border-radius: 6px; padding: 9px 12px; min-height: 40px;
+}
+.controles button { cursor: pointer; color: var(--acento); }
+.controles button:hover, .controles select:hover { border-color: var(--acento); }
+.pastilla { border: 1px solid #2A3340; border-radius: 6px; padding: 9px 12px; }
+
+.tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 28px; display: flex; flex-direction: column; gap: 22px; }
+.titulo-sec { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.titulo-sec h2 { font-size: 14px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--tenue); }
+.titulo-sec .nota { font-family: var(--mono); font-size: 13px; color: var(--tenue); }
+.etiqueta { font-size: 12px; font-weight: 600; border: 1px solid currentColor; border-radius: 999px; padding: 4px 12px; }
+.ok { color: var(--acento); }
+.warn { color: var(--ambar); }
+.bad { color: var(--coral); }
+
+.fila { display: flex; flex-wrap: wrap; gap: 16px; }
+.kpi { flex: 1 1 240px; background: var(--suave); border: 1px solid transparent; border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.kpi.destacado { border-color: var(--acento); }
+.kpi.destacado .rot { color: var(--acento); }
+.rot { font-size: 13px; color: var(--tenue); }
+.sub { font-size: 13px; color: var(--tenue); }
+.num { font-family: var(--mono); font-weight: 500; letter-spacing: -.02em; }
+.n34 { font-size: 40px; }
+.n52 { font-size: 64px; line-height: 1; letter-spacing: -.03em; }
+.n26 { font-size: 26px; }
+.n30 { font-size: 28px; }
+.n38 { font-size: 38px; }
+.n20 { font-size: 22px; }
+.n24 { font-size: 24px; }
+
+.col-div { flex: 1 1 180px; display: flex; flex-direction: column; gap: 4px; }
+.col-grande { flex: 2 1 300px; display: flex; flex-direction: column; gap: 4px; }
+.col-div .pe, .pe { color: var(--ambar); }
+
+.barra { position: relative; height: 10px; background: var(--pista); border-radius: 2px; }
+.barra.alta { height: 18px; }
+.barra .relleno { position: absolute; left: 0; top: 0; bottom: 0; background: var(--acento); border-radius: 2px; min-width: 3px; }
+.barra .marca { position: absolute; top: -6px; bottom: -6px; width: 3px; margin-left: -1px; }
+.barra .marca.hoy { background: var(--tinta); width: 2px; }
+.barra .marca.pe { background: var(--ambar); top: -8px; bottom: -8px; }
+.barra .marca.obj { background: var(--tinta); top: -8px; bottom: -8px; }
+.barra .marca.proy { width: 0; border-left: 2px dashed var(--tenue); top: 0; bottom: 0; background: none; }
+.leyenda { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-family: var(--mono); font-size: 12px; text-transform: uppercase; color: var(--tenue); }
+.leyenda b { color: var(--tinta); font-weight: 500; }
+.sw { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: 0; }
+
+.ritmo { display: flex; flex-direction: column; gap: 10px; }
+.ritmo .tit { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--acento); }
+.ritmo .fila { gap: 1px; background: var(--borde); border: 1px solid var(--borde); border-radius: 6px; overflow: hidden; }
+.ritmo .item { flex: 1 1 200px; background: var(--tarjeta); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+.ritmo .item .rot, .ritmo .item .sub { font-size: 12px; }
+.neg { color: var(--coral); }
+.pos { color: var(--acento); }
+
+/* Comparativa anual */
+.graf-scroll { overflow-x: auto; }
+.graf { min-width: 640px; display: flex; flex-direction: column; gap: 8px; }
+.graf .barras { display: flex; align-items: flex-end; gap: 12px; height: 240px; border-bottom: 1px solid #2A3340; padding: 0 4px; }
+.graf .mes { flex: 1 1 0; display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 100%; }
+.graf .b { width: 40%; position: relative; }
+.graf .b.ant { background: var(--acento-claro); }
+.graf .b.act { background: var(--acento); }
+.graf .pila { width: 40%; height: 100%; position: relative; }
+.graf .pila .b { position: absolute; left: 0; right: 0; bottom: 0; width: auto; }
+.graf .pila .proy { position: absolute; left: 0; right: 0; bottom: 0; border: 2px dashed var(--acento); border-bottom: none; background: transparent; }
+.graf .etis { display: flex; gap: 12px; padding: 0 4px; }
+.graf .etis span { flex: 1 1 0; text-align: center; font-family: var(--mono); font-size: 12px; text-transform: uppercase; color: var(--tenue); }
+.graf .vars { display: flex; gap: 12px; padding: 0 4px; }
+.graf .vars span { flex: 1 1 0; text-align: center; font-size: 11px; font-family: var(--mono); }
+
+/* Situación financiera */
+.sec-fin { display: flex; flex-direction: column; gap: 16px; }
+.sec-fin > .titulo-sec { padding: 8px 4px 0; }
+.mini { flex: 1 1 260px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+.tramos-barra { display: flex; height: 14px; border-radius: 2px; overflow: hidden; gap: 2px; background: var(--pista); }
+.tramo { flex: 1 1 200px; display: flex; flex-direction: column; gap: 4px; border-top: 3px solid; padding-top: 10px; }
+.tabla { flex: 1 1 400px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 8px 24px 16px; }
+.tabla .enc { padding: 14px 0; border-bottom: 1px solid var(--borde); font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--tenue); }
+.tabla .reng { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--linea); font-size: 14px; }
+.tabla .reng .num { font-weight: 400; white-space: nowrap; }
+.tabla .tot { display: flex; justify-content: space-between; padding: 14px 0 4px; font-weight: 700; font-size: 15px; }
+.tag { font-size: 11px; color: var(--acento); background: var(--acento-suave); border-radius: 4px; padding: 2px 6px; margin-left: 8px; white-space: nowrap; }
+.bal { flex: 1 1 400px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 22px 24px; display: flex; flex-direction: column; gap: 6px; }
+.bal .cab { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
+.rojo { color: var(--coral); }
+
+.aviso { background: rgba(255, 181, 71, .1); border: 1px solid rgba(255, 181, 71, .4); color: var(--ambar); border-radius: 6px; padding: 12px 16px; font-size: 13px; }
+.error { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 28px; display: flex; flex-direction: column; gap: 12px; }
+.error b { color: var(--coral); }
+.vacio { font-size: 14px; color: var(--tenue); }
+.pie { font-family: var(--mono); font-size: 12px; color: var(--tenue); text-align: center; }
+
+/* Bloques con el formato de VentasTrack */
+:root { --vendido: #7AA2FF; --facturado: #C6F432; --facturable: #B794F6; }
+.c-ok { color: var(--acento); }
+.c-warn { color: var(--ambar); }
+.c-bad { color: var(--coral); }
+.c-mes { color: var(--vendido); }
+.relleno.c-ok { background: var(--acento); }
+.relleno.c-warn { background: var(--ambar); }
+.relleno.c-bad { background: var(--coral); }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.k { background: var(--suave); border: 1px solid var(--borde); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.k.b-ok { border-color: rgba(198, 244, 50, .35); }
+.k.b-bad { border-color: rgba(255, 138, 122, .4); }
+.k.k-ancho { grid-column: span 2; }
+.k-rot { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--tenue); }
+.k-val { font-family: var(--mono); font-size: 22px; font-weight: 500; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-val.pe { color: var(--ambar); }
+.k-sub { font-size: 12px; color: var(--tenue); }
+.avance { background: var(--suave); border: 1px solid var(--borde); border-radius: 6px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.avance .titulo-sec b { font-size: 15px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--tenue); }
+.chips b { font-family: var(--mono); font-weight: 500; color: var(--tinta); }
+.chips b.c-ok { color: var(--acento); } .chips b.c-warn { color: var(--ambar); } .chips b.c-bad { color: var(--coral); }
+.composicion { display: flex; height: 12px; border-radius: 2px; overflow: hidden; gap: 2px; background: var(--pista); }
+.bf { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.bf > div { background: var(--suave); border-radius: 6px; border-left: 3px solid; padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; }
+.vend { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; }
+.v { background: var(--suave); border: 1px solid var(--borde); border-left: 3px solid; border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.v-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.v-cab > div:first-child { display: flex; flex-direction: column; gap: 2px; }
+.v-der { display: flex; align-items: center; gap: 12px; text-align: right; }
+.infl { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 13px; color: var(--tenue); }
+.infl input { width: 76px; font: inherit; color: var(--tinta); background: var(--suave); border: 1px solid var(--acento); border-radius: 6px; padding: 8px 10px; min-height: 40px; text-align: right; }
+.graf3 .mes { gap: 2px; }
+.graf3 .b, .graf3 .pila { width: 28%; }
+.graf .b.aj { background: var(--ambar); }
+.graf .vars em { flex: 0 0 64px; font-style: normal; font-size: 11px; color: var(--tenue); text-align: left; }
+.graf .vars { padding-left: 0; }
+.graf3 .etis { padding-left: 76px; }
+.graf3 .barras { padding-left: 76px; }
+@media (max-width: 640px) { .k.k-ancho { grid-column: auto; } .vend { grid-template-columns: 1fr; } }
+
+@media (max-width: 640px) {
+  .tarjeta { padding: 20px; }
+  .n52 { font-size: 44px; }
+  .n34 { font-size: 30px; }
+}
+a.enlace { color: var(--tinta); text-decoration: none; display: inline-flex; align-items: center; min-height: 40px; }
+a.enlace:hover { border-color: var(--acento); color: var(--acento); }
+  </style>
+</head>
+<body>
+  <main class="pagina" id="app">
+    <div class="vacio">Cargando datos…</div>
+  </main>
+
+  <script src="config.js"></script>
+
+
+  <script>
+/* Lectura de las planillas y cálculos. Sin dependencias (corre también en Node para pruebas). */
+(function (root) {
+  'use strict';
+
+  var MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
+    'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  var MESES_CORTO = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+  var RUBROS = [
+    { key: 'caja', label: 'Caja y bancos', alias: ['caja y bancos', 'caja'], lado: 'activo', acido: true },
+    { key: 'cheques', label: 'Ch. en cartera', alias: ['ch en cartera', 'cheques en cartera'], lado: 'activo', acido: true },
+    { key: 'cobrar', label: 'Cuentas a cobrar', alias: ['cuentas a cobrar', 'deuda en la calle'], lado: 'activo', acido: true },
+    { key: 'stock', label: 'Stock (a valor compra)', alias: ['stock valor compra', 'stock a valor compra', 'stock al costo', 'stock costo', 'stock valor venta', 'stock a valor venta', 'stock'], lado: 'activo', acido: false },
+    { key: 'vehiculos', label: 'Vehículos', alias: ['vehiculos mm', 'vehiculos'], lado: 'activo', acido: false },
+    { key: 'inmueble', label: 'Inmueble Juncal 1871', alias: ['inmueble juncal 1871', 'inmueble'], lado: 'activo', acido: false },
+    { key: 'chpropio', label: 'Ch. propio pendiente', alias: ['ch propio pendiente', 'ch propio pen', 'cheque propio pendiente', 'ch propio'], lado: 'pasivo', acido: true },
+    { key: 'proveedores', label: 'Proveedores', alias: ['proveedores', 'deuda con proveedores'], lado: 'pasivo', acido: true },
+    { key: 'fiscales', label: 'Deudas fiscales', alias: ['deudas fiscales'], lado: 'pasivo', acido: false },
+    { key: 'prestamos', label: 'Préstamos bancarios', alias: ['prestamos bancarios'], lado: 'pasivo', acido: false },
+    { key: 'dividendos', label: 'Dividendos y fondo líquido pendiente', alias: ['dividendos y fondo liquido pendiente', 'dividendos'], lado: 'pasivo', acido: false },
+    { key: 'empleados', label: 'Deudas con los empleados', alias: ['deudas con los empleados', 'deudas con empleados'], lado: 'pasivo', acido: false },
+    { key: 'hipotecarias', label: 'Deudas hipotecarias', alias: ['deudas hipotecarias'], lado: 'pasivo', acido: false },
+    { key: 'socios', label: 'Deudas con los socios', alias: ['deudas con los socios', 'deudas con socios'], lado: 'pasivo', acido: false }
+  ];
+
+  function norm(s) {
+    return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
+
+  // CSV (RFC 4180): comillas, comas dentro de comillas, saltos CRLF.
+  function parseCSV(text) {
+    var rows = [], row = [], field = '', inQ = false, i = 0, c;
+    text = String(text || '').replace(/^﻿/, '');
+    while (i < text.length) {
+      c = text[i];
+      if (inQ) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+          inQ = false; i++; continue;
+        }
+        field += c; i++; continue;
+      }
+      if (c === '"') { inQ = true; i++; continue; }
+      if (c === ',') { row.push(field); field = ''; i++; continue; }
+      if (c === '\r') { i++; continue; }
+      if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+      field += c; i++;
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(function (r) { return r.some(function (v) { return String(v).trim() !== ''; }); });
+  }
+
+  // Importes de VentasTrack: mismo criterio que usa VentasTrack, para que los totales coincidan.
+  function parseAmt(raw) {
+    if (typeof raw === 'number') return raw;
+    var s = String(raw == null ? '' : raw).trim().replace(/[$\s\r]/g, '').replace(/[−–]/g, '-');
+    if (!s || s === '-') return null;
+    var neg = false;
+    if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1, -1); }
+    if (s.slice(-1) === '-') { neg = true; s = s.slice(0, -1); }
+    if (s[0] === '-') { neg = !neg; s = s.slice(1); }
+    if (!s) return null;
+    if (s.indexOf(',') !== -1 && s.indexOf('.') === -1) s = s.replace(',', '.');
+    else if (s.indexOf(',') !== -1 && s.indexOf('.') !== -1) s = s.replace(/\./g, '').replace(',', '.');
+    else s = s.replace(/\./g, '');
+    var v = parseFloat(s);
+    if (!isFinite(v)) return null;
+    return neg ? -v : v;
+  }
+
+  // Importes de la planilla del tablero ("12.600.000", "1.234,56", con $ o negativos).
+  function parseNum(v) {
+    if (v == null) return null;
+    if (typeof v === 'number') return isFinite(v) ? v : null;
+    var s = String(v).trim();
+    if (!s || s === '-' || s === '—') return null;
+    var neg = false;
+    if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1, -1); }
+    s = s.replace(/[$\s ]/g, '');
+    if (s[0] === '-' || s[0] === '−') { neg = true; s = s.slice(1); }
+    var lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
+    if (lastDot > -1 && lastComma > -1) {
+      s = lastComma > lastDot ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    } else if (lastComma > -1) {
+      s = /^\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, '') : s.replace(',', '.');
+    } else if (lastDot > -1) {
+      if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    }
+    if (!/^\d*\.?\d+$/.test(s)) return null;
+    var n = Number(s);
+    return isFinite(n) ? (neg ? -n : n) : null;
+  }
+
+  function mkDate(y, m, d) {
+    if (y < 100) y += 2000;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    return { y: y, m: m, d: d, key: y + '-' + pad(m) + '-' + pad(d), mes: y + '-' + pad(m) };
+  }
+  // Fechas dd/mm/aaaa o aaaa-mm-dd (ignora la hora).
+  function parseDate(v) {
+    var s = String(v == null ? '' : v).trim().split(/[ T]/)[0];
+    var m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+    if (m) return mkDate(+m[3], +m[2], +m[1]);
+    m = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+    if (m) return mkDate(+m[1], +m[2], +m[3]);
+    return null;
+  }
+
+  // "Octubre", "oct", "10", "setiembre" → 0..11
+  function mesIndice(v) {
+    var n = norm(v);
+    if (!n) return -1;
+    if (/^\d{1,2}$/.test(n)) { var k = +n; return k >= 1 && k <= 12 ? k - 1 : -1; }
+    if (n === 'setiembre' || n === 'set') return 8;
+    for (var i = 0; i < 12; i++) {
+      if (n === norm(MESES[i]) || n === norm(MESES_CORTO[i])) return i;
+    }
+    return -1;
+  }
+
+  // Mes "aaaa-mm" a partir de "2026-10", "10/2026", "octubre 2026" o una fecha.
+  function parseMes(v) {
+    var s = String(v == null ? '' : v).trim(), m;
+    if ((m = s.match(/^(\d{4})[\/\-.](\d{1,2})$/))) return m[1] + '-' + pad(+m[2]);
+    if ((m = s.match(/^(\d{1,2})[\/\-.](\d{4})$/))) return m[2] + '-' + pad(+m[1]);
+    var d = parseDate(s);
+    if (d) return d.mes;
+    var n = norm(s), y = n.match(/\d{4}/);
+    if (y) {
+      var palabras = n.replace(/\d{4}/, '').trim();
+      var i = mesIndice(palabras);
+      if (i > -1) return y[0] + '-' + pad(i + 1);
+    }
+    return null;
+  }
+
+  function findCol(headers, aliases) {
+    var h = headers.map(norm), i, j;
+    for (i = 0; i < aliases.length; i++) { j = h.indexOf(aliases[i]); if (j > -1) return j; }
+    for (i = 0; i < aliases.length; i++) {
+      for (j = 0; j < h.length; j++) if (h[j].indexOf(aliases[i]) === 0) return j;
+    }
+    return -1;
+  }
+  function esColAnio(h) { var n = norm(h); return n === 'ano' || n === 'anio' || n === 'year'; }
+  function falta(pest, col) { throw new Error('En la pestaña ' + pest + ' no se encontró la columna "' + col + '".'); }
+
+  /* ---------- VentasTrack ---------- */
+
+  // Ventas: Fecha | Vendedor | Cliente | Importe (una fila por venta)
+  function leerVentas(rows) {
+    if (!rows || !rows.length) return [];
+    var h = rows[0];
+    var cF = findCol(h, ['fecha', 'date']), cV = findCol(h, ['vendedor', 'seller']);
+    var cC = findCol(h, ['cliente', 'client']), cI = findCol(h, ['importe', 'amount', 'monto', 'total']);
+    if (cF < 0) falta('Ventas (VentasTrack)', 'Fecha');
+    if (cV < 0) falta('Ventas (VentasTrack)', 'Vendedor');
+    if (cI < 0) falta('Ventas (VentasTrack)', 'Importe');
+    var out = [];
+    rows.slice(1).forEach(function (r) {
+      var f = parseDate(r[cF]), vend = String(r[cV] || '').trim(), imp = parseAmt(r[cI]);
+      // Mismo filtro que VentasTrack: con vendedor, importe distinto de cero y fecha válida.
+      if (!f || !vend || !imp) return;
+      out.push({ fecha: f, vendedor: vend, cliente: cC > -1 ? String(r[cC] || '').trim() : '', importe: imp });
+    });
+    return out;
+  }
+
+  // Objetivos: Vendedor | Año | Enero | Febrero | ...  →  objetivo por vendedor y por mes ("2026-10")
+  function leerObjetivos(rows, anioPorDefecto) {
+    var out = { vendedores: [], porVendedor: {} };
+    if (!rows || !rows.length) return out;
+    var h = rows[0], cV = findCol(h, ['vendedor', 'seller']), cA = -1, cols = [];
+    if (cV < 0) falta('Objetivos (VentasTrack)', 'Vendedor');
+    h.forEach(function (x, i) {
+      if (i === cV) return;
+      if (esColAnio(x)) { cA = i; return; }
+      var mi = mesIndice(x);
+      if (mi > -1) cols.push({ i: i, m: mi });
+    });
+    rows.slice(1).forEach(function (r) {
+      var vend = String(r[cV] || '').trim();
+      if (!vend) return;
+      var y = cA > -1 ? parseInt(String(r[cA] || '').replace(/[^\d]/g, ''), 10) : NaN;
+      if (!y) y = anioPorDefecto;
+      if (out.vendedores.indexOf(vend) < 0) out.vendedores.push(vend);
+      if (!out.porVendedor[vend]) out.porVendedor[vend] = {};
+      cols.forEach(function (c) {
+        var v = parseAmt(r[c.i]);
+        if (v > 0) out.porVendedor[vend][y + '-' + pad(c.m + 1)] = v;
+      });
+    });
+    return out;
+  }
+
+  /* Facturación: Mes | Año | Facturado | Facturable.
+     La facturación del mes es Facturado + Facturable (el facturable solo tiene valor en el mes vigente). */
+  function leerFacturacion(rows, anioPorDefecto) {
+    var out = { total: {}, facturado: {}, facturable: {} };
+    if (!rows || !rows.length) return out;
+    var h = rows[0], cM = -1, cA = -1, cF = -1, cL = -1;
+    h.forEach(function (x, i) {
+      var n = norm(x);
+      if (esColAnio(x)) cA = i;
+      else if (cM < 0 && /^(mes|month)/.test(n)) cM = i;
+      else if (cL < 0 && /(facturable|billable)/.test(n)) cL = i;
+      else if (cF < 0 && /(facturado|billed)/.test(n)) cF = i;
+    });
+    if (cM < 0) falta('Facturación (VentasTrack)', 'Mes');
+    if (cF < 0) falta('Facturación (VentasTrack)', 'Facturado');
+    rows.slice(1).forEach(function (r) {
+      var mi = mesIndice(r[cM]);
+      if (mi < 0) return;
+      var y = cA > -1 ? parseInt(String(r[cA] || '').replace(/[^\d]/g, ''), 10) : NaN;
+      if (!y) y = anioPorDefecto;
+      var fa = parseAmt(r[cF]), fl = cL > -1 ? parseAmt(r[cL]) : null;
+      if (fa == null && fl == null) return; // celdas vacías: mes sin dato
+      var k = y + '-' + pad(mi + 1);
+      out.facturado[k] = fa || 0;
+      out.facturable[k] = fl || 0;
+      out.total[k] = (fa || 0) + (fl || 0);
+    });
+    return out;
+  }
+
+  // Feriados: una fecha por fila
+  function leerFeriados(rows) {
+    var out = {};
+    if (!rows || !rows.length) return out;
+    var c = findCol(rows[0], ['fecha', 'date']);
+    rows.forEach(function (r, i) {
+      var f = parseDate(c > -1 ? r[c] : r[0]);
+      if (f) out[f.key] = true;
+      else if (i === 0) return; // encabezado
+    });
+    return out;
+  }
+
+  /* ---------- Planilla del tablero ---------- */
+
+  function leerEquilibrio(rows) {
+    var out = {};
+    if (!rows || !rows.length) return out;
+    var cM = findCol(rows[0], ['mes']), cP = findCol(rows[0], ['punto de equilibrio', 'equilibrio', 'pe']);
+    if (cM < 0 || cP < 0) return out;
+    rows.slice(1).forEach(function (r) {
+      var mes = parseMes(r[cM]), v = parseNum(r[cP]);
+      if (mes && v) out[mes] = v;
+    });
+    return out;
+  }
+
+  function leerBalance(rows) {
+    if (!rows || !rows.length) return [];
+    var cf = findCol(rows[0], ['fecha']);
+    if (cf < 0) falta('BALANCE', 'Fecha');
+    var cols = {}, faltan = [];
+    RUBROS.forEach(function (r) {
+      cols[r.key] = findCol(rows[0], r.alias);
+      if (cols[r.key] < 0) faltan.push(r.label);
+    });
+    if (faltan.length) throw new Error('En la pestaña BALANCE no se encontró la columna: ' + faltan.join(', ') + '.');
+    var out = [];
+    rows.slice(1).forEach(function (r) {
+      var f = parseDate(r[cf]);
+      if (!f) return;
+      var vals = {}, alguno = false;
+      RUBROS.forEach(function (ru) {
+        var n = parseNum(r[cols[ru.key]]);
+        if (n != null) alguno = true;
+        vals[ru.key] = n || 0;
+      });
+      if (alguno) out.push({ fecha: f, vals: vals });
+    });
+    return out.sort(function (a, b) { return a.fecha.key < b.fecha.key ? -1 : a.fecha.key > b.fecha.key ? 1 : 0; });
+  }
+
+  function etiquetaTramo(h) {
+    var t = String(h || '').trim();
+    if (/\d\s*$/.test(t) && !/d[ií]as\s*$/i.test(t)) t += ' días';
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+
+  /* DEUDA_VENCIMIENTOS: Fecha | Menos de 30 | 30 a 45 | 45 a 60 | Mas de 60 | (Total opcional)
+     Los tramos salen de los encabezados, en el orden de la planilla. Usa el último corte. */
+  function leerVencimientos(rows) {
+    if (!rows || !rows.length) return null;
+    var cf = findCol(rows[0], ['fecha']);
+    if (cf < 0) falta('DEUDA_VENCIMIENTOS', 'Fecha');
+    var tramos = [];
+    rows[0].forEach(function (h, i) {
+      var n = norm(h);
+      if (i === cf || !n || n.indexOf('total') === 0 || n.indexOf('observ') === 0) return;
+      tramos.push({ col: i, label: etiquetaTramo(h) });
+    });
+    if (!tramos.length) throw new Error('La pestaña DEUDA_VENCIMIENTOS no tiene columnas de tramos.');
+    var ultimo = null;
+    rows.slice(1).forEach(function (r) {
+      var f = parseDate(r[cf]);
+      if (!f) return;
+      var vals = [], alguno = false;
+      tramos.forEach(function (t) { var x = parseNum(r[t.col]); if (x != null) alguno = true; vals.push(x || 0); });
+      if (alguno && (!ultimo || f.key >= ultimo.fecha.key)) ultimo = { fecha: f, vals: vals };
+    });
+    if (!ultimo) return null;
+    var total = sum(ultimo.vals);
+    return {
+      fecha: ultimo.fecha, total: total,
+      tramos: tramos.map(function (t, i) { return { label: t.label, valor: ultimo.vals[i], pct: total ? ultimo.vals[i] / total : null }; })
+    };
+  }
+
+  function calcularBalance(fila) {
+    if (!fila) return null;
+    var items = RUBROS.map(function (r) {
+      return { key: r.key, label: r.label, lado: r.lado, acido: r.acido, valor: fila.vals[r.key] };
+    });
+    function tot(fn) { return sum(items.filter(fn).map(function (x) { return x.valor; })); }
+    var totA = tot(function (x) { return x.lado === 'activo'; });
+    var totP = tot(function (x) { return x.lado === 'pasivo'; });
+    var acA = tot(function (x) { return x.lado === 'activo' && x.acido; });
+    var acP = tot(function (x) { return x.lado === 'pasivo' && x.acido; });
+    return {
+      fecha: fila.fecha, items: items,
+      totalActivo: totA, totalPasivo: totP, balance: totA - totP, balanceIdx: totP ? totA / totP : null,
+      acidoActivo: acA, acidoPasivo: acP, acido: acA - acP, acidoIdx: acP ? acA / acP : null,
+      stock: fila.vals.stock, calle: fila.vals.cobrar, proveedores: fila.vals.proveedores
+    };
+  }
+
+  /* ---------- Calendario ---------- */
+
+  function diasDelMes(mes) { var p = mes.split('-'); return new Date(Date.UTC(+p[0], +p[1], 0)).getUTCDate(); }
+  // Días hábiles del mes: lunes a viernes que no son feriado.
+  function habiles(mes, feriados) {
+    var p = mes.split('-'), y = +p[0], m = +p[1], out = [];
+    for (var d = 1, n = diasDelMes(mes); d <= n; d++) {
+      var wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+      if (wd !== 0 && wd !== 6 && !feriados[mes + '-' + pad(d)]) out.push(d);
+    }
+    return out;
+  }
+
+  // Porcentaje entero, igual que VentasTrack: pct(12, 50) = 24
+  function pct(v, g) { return g ? Math.round(v / g * 100) : 0; }
+
+  /* Arma el modelo completo para un mes "aaaa-mm".
+     Misma lógica que VentasTrack:
+     - Solo entran los vendedores con objetivo cargado en el mes.
+     - Días hábiles: lunes a viernes menos feriados; en el mes en curso se cuentan hasta hoy.
+     - Avance = % del objetivo vs % de días hábiles transcurridos (en enteros).
+     - Backorder = vendido − (facturado + facturable). */
+  function calcular(t, mesPedido, opciones) {
+    opciones = opciones || {};
+    var hoy = opciones.hoy || new Date();
+    var anioHoy = hoy.getFullYear();
+    var mesHoy = anioHoy + '-' + pad(hoy.getMonth() + 1);
+    var avisos = [];
+
+    var ventas = leerVentas(t.ventas);
+    var obj = leerObjetivos(t.objetivos, anioHoy);
+    var factT = leerFacturacion(t.facturacion, anioHoy);
+    var feriados = {};
+    try { feriados = leerFeriados(t.feriados); } catch (e) { avisos.push(e.message); }
+    var equilibrio = {};
+    try { equilibrio = leerEquilibrio(t.equilibrio); } catch (e) { avisos.push(e.message); }
+
+    var meses = [mesHoy];
+    ventas.forEach(function (v) { if (meses.indexOf(v.fecha.mes) < 0) meses.push(v.fecha.mes); });
+    meses.sort().reverse();
+    var mes = mesPedido && meses.indexOf(mesPedido) > -1 ? mesPedido : mesHoy;
+    var esActual = mes === mesHoy;
+    var y = +mes.split('-')[0], mAct = +mes.split('-')[1];
+
+    // Días hábiles
+    var dHab = habiles(mes, feriados), twd = dHab.length;
+    var hastaDia = esActual ? hoy.getDate() : diasDelMes(mes);
+    var elWD = dHab.filter(function (d) { return d <= hastaDia; }).length;
+    var remWD = twd - elWD;
+    var mthPct = pct(elWD, twd);
+
+    // Vendedores con objetivo en el mes
+    var delMes = ventas.filter(function (v) { return v.fecha.mes === mes; });
+    var vendedores = obj.vendedores.filter(function (s) { return (obj.porVendedor[s][mes] || 0) > 0; }).map(function (s, i) {
+      var vs = delMes.filter(function (v) { return v.vendedor === s; });
+      var total = sum(vs.map(function (v) { return v.importe; }));
+      var goal = obj.porVendedor[s][mes];
+      var gap = goal - total;
+      var exp = twd ? Math.round(goal / twd * elWD) : 0;
+      return {
+        vendedor: s, idx: i, total: total, goal: goal, p: pct(total, goal), gap: gap,
+        diff: pct(total, goal) - mthPct, vsExp: total - exp,
+        dailyAvg: elWD ? Math.round(total / elWD) : 0,
+        dailyNeed: remWD ? Math.round(Math.max(0, gap) / remWD) : 0
+      };
+    });
+    if (!vendedores.length) avisos.push('No hay objetivos cargados en VentasTrack para ' + MESES[mAct - 1] + ' ' + y + '.');
+    var activos = {};
+    vendedores.forEach(function (r) { activos[r.vendedor] = true; });
+    var ventasActivas = delMes.filter(function (v) { return activos[v.vendedor]; });
+    var sinObjetivo = sum(delMes.filter(function (v) { return !activos[v.vendedor]; }).map(function (v) { return v.importe; }));
+    if (sinObjetivo) avisos.push('Hay ventas por ' + Math.round(sinObjetivo).toLocaleString('es-AR') + ' de vendedores sin objetivo en el mes: no se suman, igual que en VentasTrack.');
+
+    // Empresa
+    var tv = sum(vendedores.map(function (r) { return r.total; }));
+    var tg = sum(vendedores.map(function (r) { return r.goal; }));
+    var tp = pct(tv, tg), tgap = tg - tv;
+    var ultima = null;
+    ventasActivas.forEach(function (v) { if (!ultima || v.fecha.key > ultima.key) ultima = v.fecha; });
+    var ventaDia = esActual && ultima ? sum(ventasActivas.filter(function (v) { return v.fecha.key === ultima.key; }).map(function (v) { return v.importe; })) : 0;
+    var empresa = {
+      total: tv, objetivo: tg, p: tp, diff: tp - mthPct, gap: tgap,
+      ventaDia: ventaDia, fechaDia: esActual ? ultima : null,
+      dailyAvg: elWD ? Math.round(tv / elWD) : 0,
+      dailyNeed: tg && remWD ? Math.round(Math.max(0, tgap) / remWD) : 0,
+      vsExp: tv - (tg && twd ? Math.round(tg / twd * elWD) : 0),
+      proyeccion: elWD ? Math.round(tv / elWD * twd) : null
+    };
+
+    // Facturación: facturado + facturable; backorder = vendido − facturación
+    var billed = factT.facturado[mes] || 0, billable = factT.facturable[mes] || 0;
+    var fTotal = billed + billable;
+    var backorder = tv - fTotal;
+    var pe = equilibrio[mes] || opciones.puntoEquilibrio || null;
+    var facturacion = {
+      facturado: billed, facturable: billable, total: fTotal, hayDato: factT.total[mes] != null,
+      backorder: backorder, boPct: pct(Math.max(0, backorder), tv),
+      pFacturado: pct(billed, tv), pFacturable: pct(billable, tv),
+      p: pct(fTotal, tg), diff: pct(fTotal, tg) - mthPct, gap: tg - fTotal,
+      vsExp: fTotal - (tg && twd ? Math.round(tg / twd * elWD) : 0),
+      dailyAvg: elWD ? Math.round(fTotal / elWD) : 0,
+      dailyNeed: tg && remWD ? Math.round(Math.max(0, tg - fTotal) / remWD) : 0,
+      proyeccion: elWD ? Math.round(fTotal / elWD * twd) : null,
+      pe: pe, peFaltan: pe ? Math.max(pe - fTotal, 0) : null
+    };
+    facturacion.peAlcanzable = pe && facturacion.proyeccion != null ? facturacion.proyeccion >= pe : null;
+
+    // Comparativa anual: año anterior, año anterior ajustado por inflación y año actual
+    var infl = opciones.inflacion != null && isFinite(opciones.inflacion) ? opciones.inflacion : 0;
+    var anual = [], maxV = 0, tot = { act: 0, ant: 0, aj: 0, n: 0 };
+    for (var m = 1; m <= 12; m++) {
+      var kA = y + '-' + pad(m), kP = (y - 1) + '-' + pad(m);
+      var ant = factT.total[kP] != null ? factT.total[kP] : null;
+      var it = { mes: m, corto: MESES_CORTO[m - 1], nombre: MESES[m - 1], anterior: ant,
+        ajustado: ant != null ? Math.round(ant * (1 + infl)) : null, actual: null, proyeccion: null, estado: 'futuro' };
+      if (m < mAct || (m === mAct && !esActual)) {
+        it.actual = factT.total[kA] != null ? factT.total[kA] : null;
+        it.estado = it.actual != null ? 'cerrado' : 'sindatos';
+      } else if (m === mAct) {
+        it.actual = facturacion.hayDato ? fTotal : null;
+        it.proyeccion = facturacion.hayDato ? facturacion.proyeccion : null;
+        it.estado = 'encurso';
+      }
+      var comp = it.estado === 'cerrado' ? it.actual : it.estado === 'encurso' ? it.proyeccion : null;
+      it.varNominal = comp != null && it.anterior ? comp / it.anterior - 1 : null;
+      it.varReal = comp != null && it.ajustado ? comp / it.ajustado - 1 : null;
+      if (it.estado === 'cerrado' && it.anterior != null) { tot.act += it.actual; tot.ant += it.anterior; tot.aj += it.ajustado; tot.n++; }
+      [it.anterior, it.ajustado, it.actual, it.proyeccion].forEach(function (v) { if (v != null && v > maxV) maxV = v; });
+      anual.push(it);
+    }
+    var hayAnterior = anual.some(function (x) { return x.anterior != null; });
+    if (!hayAnterior) avisos.push('Todavía no hay facturación de ' + (y - 1) + ' cargada en VentasTrack para la comparativa anual.');
+
+    var balance = [], bal = null, venc = null;
+    try { balance = leerBalance(t.balance); bal = calcularBalance(balance[balance.length - 1]); } catch (e) { avisos.push(e.message); }
+    try { if (t.vencimientos) venc = leerVencimientos(t.vencimientos); } catch (e) { avisos.push(e.message); }
+    if (venc && bal && bal.calle) {
+      venc.difBalance = venc.total - bal.calle;
+      venc.coincide = Math.abs(venc.difBalance) <= Math.max(1, bal.calle * 0.005);
+    }
+
+    return {
+      meses: meses, mes: mes, esActual: esActual,
+      mesNombre: MESES[mAct - 1] + ' ' + y, mesCorto: MESES_CORTO[mAct - 1] + ' ' + y,
+      totalDias: twd, transcurridos: elWD, restantes: remWD, mthPct: mthPct,
+      empresa: empresa, vendedores: vendedores, facturacion: facturacion,
+      anual: { anio: y, inflacion: infl, meses: anual, max: maxV, hayAnterior: hayAnterior,
+        cerrados: tot.n, ytdActual: tot.act, ytdAnterior: tot.ant, ytdAjustado: tot.aj,
+        varNominal: tot.ant ? tot.act / tot.ant - 1 : null, varReal: tot.aj ? tot.act / tot.aj - 1 : null },
+      balance: bal, vencimientos: venc,
+      avisos: avisos
+    };
+  }
+
+  var api = { parseCSV: parseCSV, parseAmt: parseAmt, parseNum: parseNum, parseDate: parseDate, parseMes: parseMes,
+    mesIndice: mesIndice, habiles: habiles, calcular: calcular, RUBROS: RUBROS, MESES: MESES };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.TableroCalc = api;
+})(this);
+  </script>
+
+  <script>
+/* Dibuja el tablero. */
+(function () {
+  'use strict';
+  var CFG = window.TABLERO_CONFIG || {};
+  var C = window.TableroCalc;
+  var app = document.getElementById('app');
+
+  var vt = CFG.ventastrack || {}, tb = CFG.tablero || {};
+  function urlVT(tab) {
+    return 'https://docs.google.com/spreadsheets/d/e/' + vt.pubId + '/pub?gid=' + (vt.gid || {})[tab] + '&single=true&output=csv';
+  }
+  var FUENTES = [
+    { key: 'ventas', nombre: 'Ventas (VentasTrack)', url: urlVT('ventas'), obligatoria: true },
+    { key: 'objetivos', nombre: 'Objetivos (VentasTrack)', url: urlVT('objetivos'), obligatoria: true },
+    { key: 'facturacion', nombre: 'Facturación (VentasTrack)', url: urlVT('facturacion'), obligatoria: true },
+    { key: 'feriados', nombre: 'Feriados (VentasTrack)', url: urlVT('feriados'), obligatoria: false },
+    { key: 'balance', nombre: 'BALANCE', url: tb.balance, obligatoria: false },
+    { key: 'vencimientos', nombre: 'DEUDA_VENCIMIENTOS', url: tb.vencimientos, obligatoria: false },
+    { key: 'equilibrio', nombre: 'OBJETIVOS (punto de equilibrio)', url: tb.equilibrio, obligatoria: false }
+  ].filter(function (f) { return f.url; });
+
+  var estado = { tablas: null, mes: null, leido: null, error: null, avisos: [] };
+
+  // ---------- Formato ----------
+  var nf1 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var nf2 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function M(v) {
+    if (v == null || !isFinite(v)) return '—';
+    return (v < 0 ? '−$' : '$') + nf1.format(Math.abs(v) / 1e6) + 'M';
+  }
+  function MS(v) { return v == null || !isFinite(v) ? '—' : (v >= 0 ? '+' : '') + M(v); }
+  function P(f) { return f == null || !isFinite(f) ? '—' : nf1.format(f * 100) + '%'; }
+  // Diferencia entre dos porcentajes, en palabras: "0,8 puntos por debajo".
+  function puntos(f) {
+    if (f == null || !isFinite(f)) return '—';
+    if (Math.abs(f) < 0.0005) return 'En línea con lo esperado';
+    return nf1.format(Math.abs(f) * 100) + (f < 0 ? ' puntos por debajo' : ' puntos por encima');
+  }
+  function VAR(f) { return f == null || !isFinite(f) ? '—' : (f >= 0 ? '+' : '−') + nf1.format(Math.abs(f) * 100) + '%'; }
+  function X(v) { return v == null || !isFinite(v) ? '—' : nf2.format(v); }
+  function F(d, anio) { return d ? (d.d < 10 ? '0' : '') + d.d + '/' + (d.m < 10 ? '0' : '') + d.m + (anio ? '/' + d.y : '') : '—'; }
+  function hora(t) { return t ? t.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : ''; }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function pc(f) { return Math.max(0, Math.min(100, (f || 0) * 100)); }
+  // Importes en millones con un decimal: $101.500.000 → $101,5M
+  function fmt(n) { return M(n); }
+
+  // ---------- Lectura ----------
+  function leer(f) {
+    var u = f.url + (f.url.indexOf('?') > -1 ? '&' : '?') + '_t=' + Date.now();
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 20000) : null;
+    return fetch(u, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined }).then(function (r) {
+      clearTimeout(timer);
+      if (!r.ok) throw new Error('No se pudo leer la pestaña ' + f.nombre + ' (error ' + r.status + ').');
+      return r.text();
+    }).then(function (txt) {
+      if (/^\s*<(!doctype|html)/i.test(txt)) throw new Error('La pestaña ' + f.nombre + ' no devolvió un CSV. Revisá que esté publicada en la web.');
+      return C.parseCSV(txt);
+    }, function (e) {
+      if (e && /pestaña/.test(e.message)) throw e;
+      throw new Error('No se pudo conectar con la pestaña ' + f.nombre + '. Revisá la conexión.');
+    });
+  }
+
+  function cargar() {
+    var avisos = [];
+    return Promise.all(FUENTES.map(function (f) {
+      var p = leer(f);
+      return f.obligatoria ? p : p.catch(function (e) { avisos.push(e.message); return null; });
+    })).then(function (res) {
+      var t = {};
+      FUENTES.forEach(function (f, i) { t[f.key] = res[i]; });
+      estado.tablas = t; estado.avisos = avisos; estado.leido = new Date(); estado.error = null;
+    }).catch(function (e) {
+      estado.error = e.message || String(e);
+    }).then(dibujar);
+  }
+
+  // ---------- Piezas ----------
+  function etiqueta(clase, texto) { return '<span class="etiqueta ' + clase + '">' + esc(texto) + '</span>'; }
+  // Colores de avance, igual que VentasTrack: ≥100% verde, ≥70% ámbar, menos rojo.
+  function sc(p) { return p >= 100 ? 'c-ok' : p >= 70 ? 'c-warn' : 'c-bad'; }
+  function signo(n) { return (n >= 0 ? '+' : '') + n; }
+  function k(rot, val, sub, clase, borde) {
+    return '<div class="k' + (borde ? ' ' + borde : '') + '"><span class="k-rot">' + rot + '</span>' +
+      '<span class="k-val' + (clase ? ' ' + clase : '') + '">' + val + '</span>' + (sub ? '<span class="k-sub">' + sub + '</span>' : '') + '</div>';
+  }
+  function chip(rot, val, clase) { return '<span>' + rot + ': <b class="' + (clase || '') + '">' + val + '</b></span>'; }
+  function barraAvance(p, mthPct, clase, color) {
+    return '<div class="barra" role="img" aria-label="Avance ' + p + '% contra ' + mthPct + '% del mes">' +
+      '<div class="relleno ' + (clase || '') + '" style="width:' + Math.min(100, p) + '%' + (color ? ';background:' + color : '') + '"></div>' +
+      '<div class="marca hoy" style="left:' + Math.min(100, mthPct) + '%" title="Mes transcurrido ' + mthPct + '%"></div></div>';
+  }
+
+  // ---------- Secciones ----------
+  function secEmpresa(d) {
+    var e = d.empresa, f = d.facturacion, bo = f.backorder;
+    var html = '<section class="tarjeta" aria-labelledby="t-emp"><div class="titulo-sec"><h2 id="t-emp">Venta · Empresa</h2>' +
+      (e.objetivo ? (e.diff >= 0 ? etiqueta('ok', 'En ritmo') : etiqueta('bad', 'Por debajo del ritmo')) : '') + '</div>';
+    html += '<div class="kv">' +
+      k('Venta del día', fmt(e.ventaDia), d.esActual ? (e.fechaDia ? 'Última carga ' + F(e.fechaDia) : 'Sin ventas cargadas') : 'Período cerrado') +
+      k('Venta total', fmt(e.total), d.mesCorto) +
+      k('Objetivo', fmt(e.objetivo), 'suma vendedores') +
+      k('Avance', signo(e.diff) + '%', '<span class="' + sc(e.p) + '">' + e.p + '%</span> vs <span class="c-mes">' + d.mthPct + '%</span> mes',
+        e.diff >= 0 ? 'c-ok' : 'c-bad', e.diff >= 0 ? 'b-ok' : 'b-bad') +
+      k('Días hábiles', d.transcurridos + '/' + d.totalDias, d.restantes + ' restantes') +
+      k('Backorder', fmt(Math.max(0, bo)), f.boPct + '% del vendido', bo > 0 ? 'c-bad' : 'c-ok', bo > 0 ? 'b-bad' : 'b-ok') +
+      '</div>';
+    html += '<div class="avance"><div class="titulo-sec"><b>Avance global</b><span class="num n30 ' + sc(e.p) + '">' + e.p + '%</span></div>' +
+      '<span class="sub">' + fmt(e.total) + ' / ' + fmt(e.objetivo) + '</span>' +
+      barraAvance(e.p, d.mthPct, sc(e.p)) +
+      '<div class="chips">' +
+      chip('Venta faltante', fmt(Math.max(0, e.gap))) +
+      chip('Venta diaria', fmt(e.dailyAvg)) +
+      (e.gap > 0 && d.restantes > 0 ? chip('Venta prom. faltante', fmt(e.dailyNeed) + '/día', e.dailyNeed <= e.dailyAvg ? 'c-ok' : 'c-warn') : '') +
+      chip('vs ritmo', (e.vsExp >= 0 ? '+' : '') + fmt(e.vsExp), e.vsExp >= 0 ? 'c-ok' : 'c-bad') +
+      (d.esActual ? chip('Proyección al cierre', fmt(e.proyeccion)) : '') +
+      '</div><span class="k-sub">La línea blanca marca el % del mes transcurrido (' + d.mthPct + '%).</span></div>';
+    return html + '</section>';
+  }
+
+  function secFacturable(d) {
+    var e = d.empresa, f = d.facturacion, bo = f.backorder;
+    var html = '<section class="tarjeta" aria-labelledby="t-fb"><div class="titulo-sec"><h2 id="t-fb">Facturado · Facturable · Backorder</h2>' +
+      '<span class="nota">Sobre lo vendido en ' + esc(d.mesCorto) + '</span></div>';
+    var tv = e.total || 1;
+    html += '<div class="composicion" role="img" aria-label="Composición de lo vendido">' +
+      (f.facturado > 0 ? '<div style="width:' + Math.min(100, f.facturado / tv * 100) + '%;background:var(--facturado)"></div>' : '') +
+      (f.facturable > 0 ? '<div style="width:' + Math.min(100, f.facturable / tv * 100) + '%;background:var(--facturable)"></div>' : '') +
+      (bo > 0 ? '<div style="width:' + Math.min(100, bo / tv * 100) + '%;background:var(--coral)"></div>' : '') + '</div>';
+    html += '<div class="bf">' +
+      '<div style="border-left-color:var(--vendido)"><span class="k-rot">Vendido</span><span class="k-val" style="color:var(--vendido)">' + fmt(e.total) + '</span><span class="k-sub">100%</span></div>' +
+      '<div style="border-left-color:var(--facturado)"><span class="k-rot">Facturado</span><span class="k-val" style="color:var(--facturado)">' + fmt(f.facturado) + '</span><span class="k-sub">' + (e.total ? f.pFacturado + '%' : '—') + '</span></div>' +
+      '<div style="border-left-color:var(--facturable)"><span class="k-rot">Facturable</span><span class="k-val" style="color:var(--facturable)">' + fmt(f.facturable) + '</span><span class="k-sub">' + (e.total ? f.pFacturable + '%' : '—') + '</span></div>' +
+      '<div style="border-left-color:' + (bo > 0 ? 'var(--coral)' : 'var(--acento)') + '"><span class="k-rot">Backorder</span><span class="k-val ' + (bo > 0 ? 'c-bad' : 'c-ok') + '">' + fmt(Math.abs(bo)) + '</span><span class="k-sub">' + (bo > 0 ? f.boPct + '% sin destino' : 'todo asignado') + '</span></div>' +
+      '</div>';
+    return html + '</section>';
+  }
+
+  function secFacturacion(d) {
+    var f = d.facturacion, tg = d.empresa.objetivo;
+    var html = '<section class="tarjeta" aria-labelledby="t-fact"><div class="titulo-sec"><h2 id="t-fact">Facturación vs. objetivo y punto de equilibrio</h2>';
+    if (!f.hayDato) {
+      return html + '</div><p class="vacio" style="margin:0">Todavía no hay facturación cargada en VentasTrack para ' + esc(d.mesNombre) + '.</p></section>';
+    }
+    if (tg && f.proyeccion != null) {
+      html += f.proyeccion >= tg ? etiqueta('ok', 'Alcanza el objetivo al ritmo actual')
+        : f.pe && f.proyeccion >= f.pe ? etiqueta('warn', 'Cubre el equilibrio, no el objetivo')
+        : etiqueta('bad', 'No cubre el equilibrio al ritmo actual');
+    }
+    html += '</div><div class="kv">' +
+      k('Facturación del mes', fmt(f.total), 'Facturado ' + fmt(f.facturado) + ' + facturable ' + fmt(f.facturable), '', 'k-ancho') +
+      k('Objetivo', fmt(tg), 'Falta facturar ' + fmt(Math.max(0, f.gap))) +
+      k('Avance', signo(f.diff) + '%', '<span class="' + sc(f.p) + '">' + f.p + '%</span> vs <span class="c-mes">' + d.mthPct + '%</span> mes',
+        f.diff >= 0 ? 'c-ok' : 'c-bad', f.diff >= 0 ? 'b-ok' : 'b-bad') +
+      k('Punto de equilibrio', fmt(f.pe), f.pe ? (f.peFaltan > 0 ? 'Faltan ' + fmt(f.peFaltan) : 'Cubierto') : '—', 'pe') +
+      (d.esActual ? k('Proyección al cierre', fmt(f.proyeccion), tg ? Math.round(f.proyeccion / tg * 100) + '% del objetivo' : '') : '') +
+      '</div>';
+    if (tg) {
+      var escala = Math.max(tg, f.pe || 0, f.proyeccion || 0, f.total || 0);
+      var x = function (v) { return Math.max(0, Math.min(100, v / escala * 100)); };
+      html += '<div class="avance"><div class="barra alta" role="img" aria-label="Facturación ' + fmt(f.total) + ', equilibrio ' + fmt(f.pe) + ', objetivo ' + fmt(tg) + '">' +
+        '<div class="relleno ' + sc(f.p) + '" style="width:' + x(f.total) + '%"></div>' +
+        (d.esActual && f.proyeccion != null ? '<div class="marca proy" style="left:' + x(f.proyeccion) + '%"></div>' : '') +
+        '<div class="marca hoy" style="left:' + x(tg * d.mthPct / 100) + '%"></div>' +
+        (f.pe ? '<div class="marca pe" style="left:' + x(f.pe) + '%"></div>' : '') +
+        '<div class="marca obj" style="left:' + x(tg) + '%"></div></div>' +
+        '<div class="leyenda"><span><span class="sw" style="background:var(--acento)"></span>Facturado + facturable ' + f.p + '%</span>' +
+        '<span>│ Esperado a hoy ' + d.mthPct + '%</span>' +
+        (d.esActual ? '<span>┆ Proyección ' + Math.round(f.proyeccion / tg * 100) + '%</span>' : '') +
+        (f.pe ? '<span><span class="sw" style="background:var(--ambar)"></span>Equilibrio ' + Math.round(f.pe / tg * 100) + '%</span>' : '') +
+        '<span><span class="sw" style="background:var(--tinta)"></span>Objetivo 100%</span></div>' +
+        '<div class="chips">' +
+        chip('Falta facturar', fmt(Math.max(0, f.gap))) +
+        chip('Facturación diaria', fmt(f.dailyAvg)) +
+        (f.gap > 0 && d.restantes > 0 ? chip('Prom. faltante', fmt(f.dailyNeed) + '/día', f.dailyNeed <= f.dailyAvg ? 'c-ok' : 'c-warn') : '') +
+        chip('vs ritmo', (f.vsExp >= 0 ? '+' : '') + fmt(f.vsExp), f.vsExp >= 0 ? 'c-ok' : 'c-bad') +
+        (f.pe && d.esActual ? chip('Equilibrio al ritmo actual', f.peAlcanzable ? 'Se alcanza' : 'No se alcanza', f.peAlcanzable ? 'c-ok' : 'c-bad') : '') +
+        '</div></div>';
+    }
+    return html + '</section>';
+  }
+
+  var COLORES_VEND = ['#7AA2FF', '#C6F432', '#B794F6', '#4FD1C5', '#FFB547', '#FF8A7A', '#F472B6', '#94A3B8'];
+  function secVendedores(d) {
+    if (!d.vendedores.length) return '';
+    var html = '<section class="tarjeta" aria-labelledby="t-vend"><div class="titulo-sec"><h2 id="t-vend">Vendedores</h2>' +
+      '<span class="nota">Mes transcurrido ' + d.mthPct + '%</span></div><div class="vend">';
+    d.vendedores.forEach(function (r) {
+      var color = COLORES_VEND[r.idx % COLORES_VEND.length];
+      html += '<div class="v" style="border-left-color:' + color + '">' +
+        '<div class="v-cab"><div><b>' + esc(r.vendedor) + '</b><span class="k-sub">' + fmt(r.total) + ' / ' + fmt(r.goal) + '</span></div>' +
+        '<div class="v-der"><span class="k-sub">mes: <span class="c-mes">' + d.mthPct + '%</span><br>diff: <b class="' + (r.diff >= 0 ? 'c-ok' : 'c-bad') + '">' + signo(r.diff) + '%</b></span>' +
+        '<span class="num n24 ' + sc(r.p) + '">' + r.p + '%</span></div></div>' +
+        barraAvance(r.p, d.mthPct, '', color) +
+        '<div class="chips">' +
+        chip('Venta diaria', fmt(r.dailyAvg)) +
+        chip('Venta faltante', fmt(Math.max(0, r.gap))) +
+        (r.gap > 0 && d.restantes > 0 ? chip('Prom. faltante', fmt(r.dailyNeed) + '/día', r.dailyNeed <= r.dailyAvg ? 'c-ok' : 'c-warn') : '') +
+        (r.vsExp !== 0 ? chip('vs ritmo', (r.vsExp >= 0 ? '+' : '') + fmt(r.vsExp), r.vsExp >= 0 ? 'c-ok' : 'c-bad') : '') +
+        '</div></div>';
+    });
+    return html + '</div></section>';
+  }
+
+  function secAnual(d) {
+    var a = d.anual, y = a.anio, max = a.max || 1, inflPct = Math.round(a.inflacion * 1000) / 10;
+    function h(v) { return v != null ? Math.max(0, Math.min(100, v / max * 100)) : 0; }
+    function clase(v) { return v == null ? '' : v >= 0 ? 'c-ok' : 'c-bad'; }
+    var html = '<section class="tarjeta" id="sec-anual" aria-labelledby="t-anual"><div class="titulo-sec"><h2 id="t-anual">Facturación mensual · ' + (y - 1) + ' vs. ' + y + '</h2>' +
+      '<label class="infl">Inflación ' + (y - 1) + ' → ' + y + ' <input id="inp-infl" type="number" step="0.5" min="0" value="' + inflPct + '" aria-label="Inflación en porcentaje"> %</label></div>' +
+      '<div class="leyenda" style="justify-content:flex-start;gap:18px">' +
+      '<span><span class="sw" style="background:var(--acento-claro)"></span>' + (y - 1) + '</span>' +
+      '<span><span class="sw" style="background:var(--ambar)"></span>' + (y - 1) + ' ajustado (+' + nf1.format(inflPct) + '%)</span>' +
+      '<span><span class="sw" style="background:var(--acento)"></span>' + y + '</span>' +
+      (d.esActual ? '<span><span class="sw" style="border:2px dashed var(--acento);width:12px;height:12px"></span>Proyección mes en curso</span>' : '') + '</div>';
+    var barras = '', etis = '', vN = '', vR = '';
+    a.meses.forEach(function (m) {
+      var tip = m.nombre + ' — ' + (y - 1) + ': ' + fmt(m.anterior) + ' · ' + (y - 1) + ' ajustado: ' + fmt(m.ajustado) + ' · ' + y + ': ' + fmt(m.actual) +
+        (m.estado === 'encurso' ? ' (en curso, proyección ' + fmt(m.proyeccion) + ')' : '') +
+        (m.varNominal != null ? ' · vs ' + (y - 1) + ': ' + VAR(m.varNominal) : '') +
+        (m.varReal != null ? ' · real: ' + VAR(m.varReal) : '');
+      var actual = m.estado === 'encurso'
+        ? '<div class="pila">' + (m.proyeccion != null ? '<div class="proy" style="height:' + h(m.proyeccion) + '%"></div>' : '') +
+          '<div class="b act" style="height:' + h(m.actual) + '%"></div></div>'
+        : '<div class="b act" style="height:' + h(m.actual) + '%"></div>';
+      barras += '<div class="mes" title="' + esc(tip) + '"><div class="b ant" style="height:' + h(m.anterior) + '%"></div>' +
+        '<div class="b aj" style="height:' + h(m.ajustado) + '%"></div>' + actual + '</div>';
+      etis += '<span>' + m.corto + '</span>';
+      vN += '<span class="' + clase(m.varNominal) + '">' + (m.varNominal == null ? '' : VAR(m.varNominal)) + '</span>';
+      vR += '<span class="' + clase(m.varReal) + '">' + (m.varReal == null ? '' : VAR(m.varReal)) + '</span>';
+    });
+    html += '<div class="graf-scroll"><div class="graf graf3" role="img" aria-label="Facturación por mes: ' + (y - 1) + ', ' + (y - 1) + ' ajustado e ' + y + '">' +
+      '<div class="barras">' + barras + '</div><div class="etis">' + etis + '</div>' +
+      '<div class="vars"><em>vs ' + (y - 1) + '</em>' + vN + '</div>' +
+      '<div class="vars"><em>Real</em>' + vR + '</div></div></div>';
+    if (!a.hayAnterior) {
+      html += '<p class="vacio" style="margin:0">Cargá la facturación de ' + (y - 1) + ' en la pestaña Facturación de VentasTrack (una fila por mes, con Año = ' + (y - 1) + ') para ver la comparación.</p>';
+    } else if (a.cerrados) {
+      html += '<div class="chips">' +
+        chip('Meses cerrados ' + y, fmt(a.ytdActual)) +
+        chip((y - 1) + ' mismos meses', fmt(a.ytdAnterior)) +
+        chip('Variación nominal', VAR(a.varNominal), clase(a.varNominal)) +
+        chip((y - 1) + ' ajustado', fmt(a.ytdAjustado)) +
+        chip('Variación real', VAR(a.varReal), clase(a.varReal)) +
+        '</div><span class="k-sub">"Real" compara contra ' + (y - 1) + ' ajustado por la inflación cargada. Pasá el mouse por cada mes para ver los importes.</span>';
+    }
+    return html + '</section>';
+  }
+
+  var COLORES_TRAMO = ['#C6F432', '#4FD1C5', '#FFB547', '#FF8A7A', '#FF5A4E'];
+  function colorTramo(i, n) { return n <= 1 ? COLORES_TRAMO[0] : COLORES_TRAMO[Math.round(i * (Math.min(n, 5) - 1) / (n - 1))]; }
+
+  function secFinanciera(d) {
+    var b = d.balance, v = d.vencimientos;
+    var html = '<section class="sec-fin" aria-labelledby="t-fin"><div class="titulo-sec"><h2 id="t-fin">Situación financiera</h2>' +
+      (b ? '<span class="nota">Saldos al ' + F(b.fecha, true) + '</span>' : '') + '</div>';
+    if (!b) return html + '<div class="tarjeta"><p class="vacio" style="margin:0">No hay datos en la pestaña BALANCE.</p></div></section>';
+
+
+    if (v) {
+      var n = v.tramos.length;
+      html += '<div class="tarjeta" style="padding:24px 28px;gap:18px"><div class="titulo-sec"><h3 style="font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Deuda en la calle por antigüedad</h3>' +
+        '<span class="nota">Total ' + M(v.total) + (v.fecha.key !== b.fecha.key ? ' · al ' + F(v.fecha, true) : '') + '</span></div>' +
+        '<div class="tramos-barra" role="img" aria-label="Deuda por antigüedad">' +
+        v.tramos.map(function (t, i) { return t.valor > 0 ? '<div style="width:' + pc(t.pct) + '%;background:' + colorTramo(i, n) + '"></div>' : ''; }).join('') +
+        '</div><div class="fila">' +
+        v.tramos.map(function (t, i) {
+          var ult = i === n - 1;
+          return '<div class="tramo" style="border-top-color:' + colorTramo(i, n) + '"><span class="rot' + (ult ? ' neg' : '') + '"' + (ult ? ' style="font-weight:600"' : '') + '>' + esc(t.label) + '</span>' +
+            '<span class="num n24">' + M(t.valor) + '</span><span class="sub">' + P(t.pct) + ' del total</span></div>';
+        }).join('') + '</div>' +
+        (v.coincide === false ? '<div class="aviso">El total por tramos (' + M(v.total) + ') no coincide con Cuentas a cobrar del balance (' + M(b.calle) + ').</div>' : '') +
+        '</div>';
+    }
+
+    function tabla(lado, titulo, total) {
+      return '<div class="tabla"><div class="enc">' + titulo + '</div>' +
+        b.items.filter(function (x) { return x.lado === lado; }).map(function (x) {
+          return '<div class="reng"><span>' + esc(x.label) + (x.acido ? '<span class="tag">entra en ácido</span>' : '') + '</span><span class="num">' + M(x.valor) + '</span></div>';
+        }).join('') +
+        '<div class="tot"><span>Total ' + lado + '</span><span class="num">' + M(total) + '</span></div></div>';
+    }
+    html += '<div class="fila">' + tabla('activo', 'Activo', b.totalActivo) + tabla('pasivo', 'Pasivo', b.totalPasivo) + '</div>';
+
+    html += '<div class="fila">' +
+      '<div class="bal"><div class="cab"><span>Balance</span>' + (b.balance >= 0 ? etiqueta('ok', 'Positivo') : etiqueta('bad', 'Negativo')) + '</div>' +
+      '<span class="num n38' + (b.balance < 0 ? ' rojo' : '') + '">' + M(b.balance) + '</span>' +
+      '<span class="sub">Total activo − Total pasivo</span>' +
+      '<span class="sub">Cobertura <b class="mono" style="color:var(--tinta)">' + X(b.balanceIdx) + '</b> veces el pasivo</span></div>' +
+      '<div class="bal"><div class="cab"><span>Balance ácido</span>' + (b.acido >= 0 ? etiqueta('ok', 'Positivo') : etiqueta('bad', 'Negativo')) + '</div>' +
+      '<span class="num n38' + (b.acido < 0 ? ' rojo' : '') + '">' + M(b.acido) + '</span>' +
+      '<span class="sub">(Caja y bancos + Ch. en cartera + Cuentas a cobrar) − (Proveedores + Ch. propio pendiente)</span>' +
+      '<span class="sub"><b class="mono" style="color:var(--tinta)">' + M(b.acidoActivo) + '</b> líquido contra <b class="mono" style="color:var(--tinta)">' + M(b.acidoPasivo) + '</b> de deuda inmediata · cobertura <b class="mono" style="color:var(--tinta)">' + X(b.acidoIdx) + '</b> veces</span></div>' +
+      '</div>';
+    return html + '</section>';
+  }
+
+  function cabecera(d) {
+    var opciones = d ? d.meses.map(function (m) {
+      var p = m.split('-');
+      return '<option value="' + m + '"' + (m === d.mes ? ' selected' : '') + '>' + C.MESES[+p[1] - 1] + ' ' + p[0] + '</option>';
+    }).join('') : '';
+    var hoy = new Date();
+    return '<header class="cabecera"><div><div class="sup">Control de gestión</div><h1>' + esc(CFG.titulo || 'Tablero de Comando') + '</h1></div>' +
+      '<div class="controles">' +
+      (d ? '<span>' + (d.esActual ? 'Hoy ' + F({ d: hoy.getDate(), m: hoy.getMonth() + 1, y: hoy.getFullYear() }, true) : 'Período cerrado') + '</span>' : '') +
+      (d ? '<span class="pastilla">Día hábil ' + d.transcurridos + ' de ' + d.totalDias + '</span>' : '') +
+      (d ? '<label><span style="position:absolute;left:-9999px">Mes</span><select id="sel-mes">' + opciones + '</select></label>' : '') +
+      '<button type="button" id="btn-act">Actualizar</button><a class="pastilla enlace" href="./">← Semáforo</a></div></header>';
+  }
+
+  // Inflación para la comparativa: la que se cargó en el gráfico (guardada en este navegador) o la de la configuración.
+  function inflacionGuardada() {
+    try { var v = localStorage.getItem('tablero.inflacion'); if (v != null && v !== '' && isFinite(+v)) return +v; } catch (e) {}
+    return +CFG.inflacion || 0;
+  }
+  estado.inflacion = inflacionGuardada();
+
+  function modelo() {
+    return C.calcular(estado.tablas, estado.mes, { puntoEquilibrio: CFG.puntoEquilibrio, inflacion: estado.inflacion / 100 });
+  }
+
+  function enlazarInflacion() {
+    var inp = document.getElementById('inp-infl');
+    if (!inp) return;
+    inp.addEventListener('change', function () {
+      var v = parseFloat(String(inp.value).replace(',', '.'));
+      if (!isFinite(v) || v < 0) v = 0;
+      estado.inflacion = v;
+      try { localStorage.setItem('tablero.inflacion', String(v)); } catch (e) {}
+      var sec = document.getElementById('sec-anual');
+      if (sec) { sec.outerHTML = secAnual(modelo()); enlazarInflacion(); }
+    });
+  }
+
+  function dibujar() {
+    var html = '', d = null;
+    if (estado.error) {
+      html = cabecera(null) + '<div class="error"><b>No se pudieron cargar los datos.</b><span>' + esc(estado.error) + '</span>' +
+        '<span class="sub">Si el problema sigue, revisá que las pestañas estén publicadas en la web como CSV.</span></div>';
+    } else if (!estado.tablas) {
+      html = '<div class="vacio">Cargando datos…</div>';
+    } else {
+      try {
+        d = modelo();
+        estado.mes = d.mes;
+        var avisos = estado.avisos.concat(d.avisos);
+        html = cabecera(d) +
+          (avisos.length ? '<div class="aviso">' + avisos.map(esc).join('<br>') + '</div>' : '') +
+          secEmpresa(d) + secFacturable(d) + secFacturacion(d) + secAnual(d) + secFinanciera(d) +
+          '<p class="pie">Ventas, objetivos y facturación: VentasTrack · Situación financiera: planilla del tablero' +
+          (estado.leido ? ' · Leído a las ' + hora(estado.leido) : '') + '</p>';
+      } catch (e) {
+        html = cabecera(null) + '<div class="error"><b>Hay un problema con los datos.</b><span>' + esc(e.message) + '</span></div>';
+      }
+    }
+    app.innerHTML = html;
+    var sel = document.getElementById('sel-mes');
+    if (sel) sel.addEventListener('change', function () { estado.mes = sel.value; dibujar(); });
+    var btn = document.getElementById('btn-act');
+    if (btn) btn.addEventListener('click', function () { btn.disabled = true; btn.textContent = 'Actualizando…'; cargar(); });
+    enlazarInflacion();
+  }
+
+  cargar();
+  var min = +CFG.refrescoMinutos;
+  if (min > 0) setInterval(cargar, min * 60000);
+})();
+  </script>
+</body>
+</html>
