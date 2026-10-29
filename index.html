@@ -215,7 +215,10 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
 .luz-val { font-family: var(--mono); font-size: 34px; font-weight: 500; letter-spacing: -.02em; color: var(--s); line-height: 1.1; }
 .luz.s-gris .luz-val { color: var(--tenue); }
 .luz-ref { margin: 0; font-size: 13px; color: var(--tenue); }
-.luz-regla { margin: 0; font-family: var(--mono); font-size: 11px; color: var(--tenue); }
+.leyenda-luz { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.leyenda-luz li { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; line-height: 1.35; color: var(--tenue); opacity: .65; min-width: 0; }
+.leyenda-luz li .foco { width: 8px; height: 8px; margin-top: 4px; }
+.leyenda-luz li.actual { opacity: 1; color: var(--s); font-weight: 600; }
 .zonas { position: relative; display: flex; height: 8px; gap: 2px; margin: 6px 0 2px; }
 .zonas i { display: block; height: 100%; }
 .zonas .z-verde { background: rgba(198, 244, 50, .35); }
@@ -872,12 +875,23 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
     if (sentido === 'menor') return valor <= u[0] ? 'verde' : valor <= u[1] ? 'amarillo' : 'rojo';
     return valor < u[0] ? 'rojo' : valor < u[1] ? 'amarillo' : 'verde';
   }
+  // Rangos de cada color en palabras: [{ estado, texto }], siempre en orden verde, amarillo, rojo.
+  var nfx = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
   function regla(u, sentido, unidad) {
-    if (!u) return '';
-    function f(v) { return unidad === 'x' ? nf2.format(v) + 'x' : unidad === 'pts' ? SP(v) + ' pts' : (v < 0 ? '−' : '') + nf0.format(Math.abs(v)) + '%'; }
-    return sentido === 'menor'
-      ? 'Verde hasta ' + f(u[0]) + ' · rojo más de ' + f(u[1])
-      : 'Verde desde ' + f(u[1]) + ' · rojo menos de ' + f(u[0]);
+    if (!u) return null;
+    function n(v) { return (v < 0 ? '−' : '') + (unidad === 'x' ? nfx : nf0).format(Math.abs(v)); }
+    function f(v) { return n(v) + (unidad === 'x' ? 'x' : unidad === 'pts' ? ' pts' : '%'); }
+    var a = u[0], b = u[1], out = [];
+    if (sentido === 'menor') {
+      out.push({ estado: 'verde', texto: 'Hasta ' + f(a) });
+      if (b > a) out.push({ estado: 'amarillo', texto: n(a) + ' a ' + f(b) });
+      out.push({ estado: 'rojo', texto: 'Más de ' + f(b) });
+    } else {
+      out.push({ estado: 'verde', texto: f(b) + ' o más' });
+      if (b > a) out.push({ estado: 'amarillo', texto: n(a) + ' a ' + f(b) });
+      out.push({ estado: 'rojo', texto: 'Menos de ' + f(a) });
+    }
+    return out;
   }
 
   /* Clientes del mes desde la pestaña Ventas (Fecha | Vendedor | Cliente | Importe).
@@ -1064,7 +1078,9 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
       '<div class="luz-val">' + (it.valor != null ? esc(it.valor) : '—') + '</div>' +
       '<p class="luz-ref">' + esc(it.ref) + '</p>' +
       zonas(it) +
-      (it.regla && it.estado !== 'gris' ? '<p class="luz-regla">' + esc(it.regla) + '</p>' : '') +
+      (it.regla && it.estado !== 'gris' ? '<ul class="leyenda-luz" aria-label="Rangos de cada color">' + it.regla.map(function (r) {
+        return '<li class="s-' + r.estado + (r.estado === it.estado ? ' actual' : '') + '"><span class="foco"></span><span>' + esc(r.texto) + '</span></li>';
+      }).join('') + '</ul>' : '') +
       '</article>';
   }
 
