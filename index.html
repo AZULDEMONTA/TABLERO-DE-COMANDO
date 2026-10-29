@@ -209,7 +209,14 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
 .luz { background: var(--tarjeta); border: 1px solid var(--borde); border-top: 3px solid var(--s); border-radius: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .luz.s-rojo { border-color: rgba(255, 92, 92, .45); border-top-color: var(--rojo); }
 .luz-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.luz-grupo { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--tenue); }
+.luz-cab h3 { min-width: 0; }
+.luz-cab { align-items: flex-start; }
+.luz-estado { white-space: nowrap; }
+.bloque { display: flex; flex-direction: column; gap: 12px; }
+.bloque-cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 16px; padding: 4px 2px 0; border-bottom: 1px solid var(--borde); padding-bottom: 10px; }
+.bloque-cab h2 { font-size: 14px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta); }
+.bloque-cuenta { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--tenue); }
+.bloque-cuenta > span { display: inline-flex; align-items: center; gap: 6px; }
 .luz-estado { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--s); }
 .luz h3 { font-size: 15px; font-weight: 600; }
 .luz-val { font-family: var(--mono); font-size: 34px; font-weight: 500; letter-spacing: -.02em; color: var(--s); line-height: 1.1; }
@@ -936,19 +943,19 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
     // 1. Venta vs ritmo del mes (puntos de avance contra % del mes transcurrido)
     out.push({
       grupo: 'Comercial', titulo: 'Venta vs. ritmo del mes',
-      valor: e.objetivo ? SP(e.diff) + ' pts' : null,
+      valor: e.objetivo ? SP(e.diff) + '%' : null,
       ref: e.objetivo ? e.p + '% del objetivo con ' + d.mthPct + '% del mes · ' + M(e.total) + ' de ' + M(e.objetivo) : 'Sin objetivo cargado',
       estado: e.objetivo ? color(e.diff, U.ventaVsRitmo, 'mayor') : 'gris',
-      n: e.diff, u: U.ventaVsRitmo, sentido: 'mayor', unidad: 'pts', escala: [-30, 20]
+      n: e.diff, u: U.ventaVsRitmo, sentido: 'mayor', unidad: '%', escala: [-30, 20]
     });
 
     // 2. Facturación vs ritmo del mes
     out.push({
       grupo: 'Comercial', titulo: 'Facturación vs. ritmo del mes',
-      valor: e.objetivo && f.hayDato ? SP(f.diff) + ' pts' : null,
+      valor: e.objetivo && f.hayDato ? SP(f.diff) + '%' : null,
       ref: f.hayDato ? f.p + '% del objetivo con ' + d.mthPct + '% del mes · ' + M(f.total) + ' facturado + facturable' : 'Sin facturación cargada para el mes',
       estado: e.objetivo && f.hayDato ? color(f.diff, U.facturacionVsRitmo, 'mayor') : 'gris',
-      n: f.diff, u: U.facturacionVsRitmo, sentido: 'mayor', unidad: 'pts', escala: [-30, 20]
+      n: f.diff, u: U.facturacionVsRitmo, sentido: 'mayor', unidad: '%', escala: [-30, 20]
     });
 
     // 3. Punto de equilibrio: proyección al cierre (mes en curso) o total (mes cerrado)
@@ -990,7 +997,7 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
       grupo: 'Comercial', titulo: 'Vendedores en ritmo',
       valor: vs.length ? enRitmo.length + ' de ' + vs.length : null,
       ref: !vs.length ? 'Sin objetivos de vendedores en el mes'
-        : abajo.length ? 'Por debajo: ' + abajo.map(function (r) { return r.vendedor + ' (' + SP(r.diff) + ' pts)'; }).join(', ')
+        : abajo.length ? 'Por debajo: ' + abajo.map(function (r) { return r.vendedor + ' (' + SP(r.diff) + '%)'; }).join(', ')
         : 'Todos al ritmo del mes',
       estado: color(pRitmo, U.vendedoresEnRitmo, 'mayor'),
       n: pRitmo, u: U.vendedoresEnRitmo, sentido: 'mayor', unidad: '%', escala: [0, 100]
@@ -1072,9 +1079,8 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
 
   function tarjeta(it) {
     return '<article class="luz s-' + it.estado + '">' +
-      '<div class="luz-cab"><span class="luz-grupo">' + esc(it.grupo) + '</span>' +
+      '<div class="luz-cab"><h3>' + esc(it.titulo) + '</h3>' +
       '<span class="luz-estado"><span class="foco"></span>' + NOMBRE[it.estado] + '</span></div>' +
-      '<h3>' + esc(it.titulo) + '</h3>' +
       '<div class="luz-val">' + (it.valor != null ? esc(it.valor) : '—') + '</div>' +
       '<p class="luz-ref">' + esc(it.ref) + '</p>' +
       zonas(it) +
@@ -1082,6 +1088,22 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
         return '<li class="s-' + r.estado + (r.estado === it.estado ? ' actual' : '') + '"><span class="foco"></span><span>' + esc(r.texto) + '</span></li>';
       }).join('') + '</ul>' : '') +
       '</article>';
+  }
+
+  // Un bloque por grupo, en este orden; dentro de cada uno, los rojos primero.
+  var GRUPOS = ['Comercial', 'Clientes', 'Financiero'];
+  function bloques(lista) {
+    return GRUPOS.map(function (g) {
+      var items = lista.filter(function (it) { return it.grupo === g; });
+      if (!items.length) return '';
+      var cnt = { rojo: 0, amarillo: 0, verde: 0, gris: 0 };
+      items.forEach(function (it) { cnt[it.estado]++; });
+      var marcas = ['rojo', 'amarillo', 'verde', 'gris'].filter(function (s) { return cnt[s]; }).map(function (s) {
+        return '<span class="s-' + s + '"><span class="foco"></span>' + cnt[s] + ' ' + NOMBRE[s].toLowerCase() + '</span>';
+      }).join('');
+      return '<section class="bloque" aria-label="' + g + '"><div class="bloque-cab"><h2>' + g + '</h2><div class="bloque-cuenta">' + marcas + '</div></div>' +
+        '<div class="grilla">' + items.map(tarjeta).join('') + '</div></section>';
+    }).join('');
   }
 
   function resumen(lista, d) {
@@ -1135,7 +1157,7 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
           (window.SEMAFORO_DEMO ? '<div class="aviso">Vista previa con datos de ejemplo. Publicada en Vercel, esta página lee las mismas planillas que el tablero.</div>' : '') +
           resumen(lista, d) +
           (avisos.length ? '<div class="aviso">' + avisos.map(esc).join('<br>') + '</div>' : '') +
-          '<section class="grilla">' + lista.map(tarjeta).join('') + '</section>' +
+          bloques(lista) +
           '<p class="pie">' + ({ planilla: 'Umbrales: pestaña UMBRALES de la planilla', mixto: 'Umbrales: pestaña UMBRALES (los que faltan, por defecto)', defecto: tb.umbrales ? 'Umbrales por defecto (revisá la pestaña UMBRALES)' : 'Umbrales por defecto (falta conectar la pestaña UMBRALES)' })[ORIGEN_U] + ' · ' +
           'Comercial: VentasTrack · Financiero: planilla del tablero' + (estado.leido ? ' · Leído a las ' + hora(estado.leido) : '') + '</p>';
       } catch (e) {
