@@ -743,6 +743,9 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
     { key: 'equilibrio', nombre: 'Proyección vs. punto de equilibrio', alias: ['punto de equilibrio', 'equilibrio', 'proyeccion'], sentido: 'mayor', verde: 110, rojo: 100 },
     { key: 'crecimientoReal', nombre: 'Crecimiento real vs. año anterior', alias: ['crecimiento real', 'crecimiento'], sentido: 'mayor', verde: 0, rojo: -5 },
     { key: 'backorder', nombre: 'Backorder', alias: ['backorder'], sentido: 'menor', verde: 10, rojo: 20 },
+    { key: 'vendedoresEnRitmo', nombre: 'Vendedores en ritmo', alias: ['vendedores en ritmo', 'vendedores'], sentido: 'mayor', verde: 75, rojo: 50 },
+    { key: 'clientesActivos', nombre: 'Clientes activos', alias: ['clientes activos'], sentido: 'mayor', verde: 0, rojo: -10 },
+    { key: 'concentracion', nombre: 'Concentración de clientes', alias: ['concentracion de clientes', 'concentracion'], sentido: 'menor', verde: 60, rojo: 75 },
     { key: 'deudaVencida', nombre: 'Deuda en la calle a más de 60 días', alias: ['deuda en la calle', 'deuda vencida', 'deuda'], sentido: 'menor', verde: 10, rojo: 20 },
     { key: 'acido', nombre: 'Liquidez ácida', alias: ['liquidez acida', 'balance acido', 'acido'], sentido: 'mayor', verde: 1.2, rojo: 1 },
     { key: 'solvencia', nombre: 'Solvencia', alias: ['solvencia'], sentido: 'mayor', verde: 1.5, rojo: 1 }
@@ -877,6 +880,42 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
       : 'Verde desde ' + f(u[1]) + ' · rojo menos de ' + f(u[0]);
   }
 
+  /* Clientes del mes desde la pestaña Ventas (Fecha | Vendedor | Cliente | Importe).
+     Mismo filtro que VentasTrack: fecha válida, con vendedor e importe distinto de cero.
+     Un cliente es activo si su compra neta del mes es mayor a cero.
+     En el mes en curso se compara contra el mes anterior hasta el mismo día. */
+  function clientes(d) {
+    var rows = estado.tablas && estado.tablas.ventas;
+    if (!rows || rows.length < 2) return null;
+    var h = rows[0].map(norm);
+    function col(list) { for (var i = 0; i < h.length; i++) if (list.indexOf(h[i]) > -1) return i; return -1; }
+    var cF = col(['fecha', 'date']), cV = col(['vendedor', 'seller']), cC = col(['cliente', 'client', 'razon social']), cI = col(['importe', 'amount', 'monto', 'total']);
+    if (cC < 0) return { error: 'La pestaña Ventas de VentasTrack no tiene columna Cliente' };
+    if (cF < 0 || cV < 0 || cI < 0) return null;
+    var p = d.mes.split('-'), y = +p[0], m = +p[1];
+    var yA = m === 1 ? y - 1 : y, mA = m === 1 ? 12 : m - 1;
+    var mesAnt = yA + '-' + (mA < 10 ? '0' : '') + mA;
+    var tope = d.esActual ? new Date().getDate() : 31;
+    var act = {}, ant = {}, hayAnt = false;
+    rows.slice(1).forEach(function (r) {
+      var f = C.parseDate(r[cF]), imp = C.parseAmt(r[cI]), cli = norm(r[cC]);
+      if (!f || !String(r[cV] || '').trim() || !imp || !cli) return;
+      if (f.mes === d.mes) act[cli] = (act[cli] || 0) + imp;
+      else if (f.mes === mesAnt) { hayAnt = true; if (f.d <= tope) ant[cli] = (ant[cli] || 0) + imp; }
+    });
+    function positivos(o) { return Object.keys(o).map(function (k) { return o[k]; }).filter(function (x) { return x > 0; }); }
+    var montos = positivos(act).sort(function (a, b) { return b - a; });
+    var n = montos.length, nAnt = positivos(ant).length;
+    var total = montos.reduce(function (s, x) { return s + x; }, 0);
+    var top = Math.max(1, Math.ceil(n * 0.2));
+    var topSum = montos.slice(0, top).reduce(function (s, x) { return s + x; }, 0);
+    return {
+      activos: n, activosAnt: nAnt, mesAnt: C.MESES[mA - 1].toLowerCase(),
+      varAct: hayAnt && nAnt ? (n / nAnt - 1) * 100 : null,
+      top: top, conc: total ? topSum / total * 100 : null, mayor: total ? montos[0] / total * 100 : null
+    };
+  }
+
   function indicadores(d) {
     var e = d.empresa, f = d.facturacion, a = d.anual, b = d.balance, v = d.vencimientos, out = [];
 
@@ -927,6 +966,42 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
       ref: boOk ? M(Math.max(0, f.backorder)) + ' vendido sin facturar' : 'Sin ventas o facturación del mes',
       estado: boOk ? color(f.boPct, U.backorder, 'menor') : 'gris',
       n: f.boPct, u: U.backorder, sentido: 'menor', unidad: '%', escala: [0, 40]
+    });
+
+    // Vendedores en ritmo: cuántos van igual o por encima del % del mes transcurrido
+    var vs = d.vendedores || [], enRitmo = vs.filter(function (r) { return r.diff >= 0; });
+    var pRitmo = vs.length ? enRitmo.length / vs.length * 100 : null;
+    var abajo = vs.filter(function (r) { return r.diff < 0; }).sort(function (x, y) { return x.diff - y.diff; });
+    out.push({
+      grupo: 'Comercial', titulo: 'Vendedores en ritmo',
+      valor: vs.length ? enRitmo.length + ' de ' + vs.length : null,
+      ref: !vs.length ? 'Sin objetivos de vendedores en el mes'
+        : abajo.length ? 'Por debajo: ' + abajo.map(function (r) { return r.vendedor + ' (' + SP(r.diff) + ' pts)'; }).join(', ')
+        : 'Todos al ritmo del mes',
+      estado: color(pRitmo, U.vendedoresEnRitmo, 'mayor'),
+      n: pRitmo, u: U.vendedoresEnRitmo, sentido: 'mayor', unidad: '%', escala: [0, 100]
+    });
+
+    // Clientes: activos y concentración, desde la pestaña Ventas de VentasTrack
+    var cl = clientes(d);
+    var hayCl = cl && !cl.error;
+    out.push({
+      grupo: 'Clientes', titulo: 'Clientes activos',
+      valor: hayCl && cl.activos ? nf0.format(cl.activos) : null,
+      ref: !hayCl ? (cl ? cl.error : 'Sin ventas del mes')
+        : !cl.activos ? 'Sin ventas con cliente en el mes'
+        : cl.varAct == null ? 'Sin ventas en ' + cl.mesAnt + ' para comparar'
+        : SP(cl.varAct, true) + '% vs. ' + nf0.format(cl.activosAnt) + ' en ' + cl.mesAnt + (d.esActual ? ' a la misma fecha' : ''),
+      estado: hayCl && cl.activos ? color(cl.varAct, U.clientesActivos, 'mayor') : 'gris',
+      n: hayCl ? cl.varAct : null, u: U.clientesActivos, sentido: 'mayor', unidad: '%', escala: [-30, 20]
+    });
+    out.push({
+      grupo: 'Clientes', titulo: 'Concentración de clientes',
+      valor: hayCl && cl.activos ? nf0.format(cl.conc) + '%' : null,
+      ref: hayCl && cl.activos ? 'Venta del 20% de mejores clientes (' + cl.top + ' de ' + cl.activos + ') · el mayor cliente, ' + nf0.format(cl.mayor) + '%'
+        : (cl && cl.error) || 'Sin ventas con cliente en el mes',
+      estado: hayCl && cl.activos ? color(cl.conc, U.concentracion, 'menor') : 'gris',
+      n: hayCl ? cl.conc : null, u: U.concentracion, sentido: 'menor', unidad: '%', escala: [20, 100]
     });
 
     // 6. Deuda en la calle vencida a más de 60 días (último tramo de la planilla)
