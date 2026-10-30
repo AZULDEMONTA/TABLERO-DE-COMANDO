@@ -245,6 +245,12 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
 .partes { gap: 20px; }
 .parte + .parte { padding-left: 20px; }
 @media (max-width: 640px) { .luz.ancha { grid-column: auto; } .partes { grid-template-columns: 1fr; } .parte + .parte { border-left: 0; padding-left: 0; border-top: 1px solid var(--borde); padding-top: 12px; } }
+.tramos-v { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.tv { display: flex; flex-direction: column; gap: 2px; background: var(--suave); border-top: 3px solid; padding: 10px 12px; min-width: 0; }
+.tv0 { border-top-color: #E8C547; } .tv1 { border-top-color: #FF9A4D; } .tv2 { border-top-color: var(--rojo); }
+.tv-rot { font-size: 12px; color: var(--tenue); }
+.tv-val { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--tinta); }
+.tv-m { font-family: var(--mono); font-size: 12px; color: var(--tenue); }
   </style>
 </head>
 <body>
@@ -768,7 +774,7 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
     { key: 'vendedoresEnRitmo', nombre: 'Vendedores en ritmo', alias: ['vendedores en ritmo', 'vendedores'], sentido: 'mayor', verde: 75, rojo: 50 },
     { key: 'clientesActivos', nombre: 'Clientes activos', alias: ['clientes activos'], sentido: 'mayor', verde: 0, rojo: -10 },
     { key: 'concentracion', nombre: 'Concentración de clientes', alias: ['concentracion de clientes', 'concentracion'], sentido: 'menor', verde: 60, rojo: 75 },
-    { key: 'deudaVencida', nombre: 'Deuda en la calle a más de 60 días', alias: ['deuda en la calle', 'deuda vencida', 'deuda'], sentido: 'menor', verde: 10, rojo: 20 },
+    { key: 'deudaVencida', nombre: 'Deuda vencida', alias: ['deuda vencida', 'deuda en la calle', 'deuda'], sentido: 'menor', verde: 20, rojo: 35 },
     { key: 'acido', nombre: 'Liquidez ácida', alias: ['liquidez acida', 'balance acido', 'acido'], sentido: 'mayor', verde: 1.2, rojo: 1 },
     { key: 'solvencia', nombre: 'Solvencia', alias: ['solvencia'], sentido: 'mayor', verde: 1.5, rojo: 1 }
   ];
@@ -1053,15 +1059,28 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
       n: hayCl ? cl.conc : null, u: U.concentracion, sentido: 'menor', unidad: '%', escala: [20, 100]
     });
 
-    // 6. Deuda en la calle vencida a más de 60 días (último tramo de la planilla)
-    var ult = v && v.tramos.length ? v.tramos[v.tramos.length - 1] : null;
-    var p60 = ult && ult.pct != null ? ult.pct * 100 : null;
+    // 6. Deuda vencida: % de la deuda en la calle con 30 días o más, separada por tramo.
+    //    El tramo de menos de 30 días no se considera vencido.
+    // Vencido = tramos de 30 días en adelante ("+30", "+40", "+50", "30 a 45", "más de 60"...).
+    // No vencido = "menos de 30", "<30", "0 a 30", "a vencer", "hasta 30"...
+    function vencido(label) {
+      var n = norm(label);
+      if (/menos|hasta|vencer|no venc|corriente/.test(n) || /^\s*</.test(label)) return false;
+      var num = n.match(/\d+/);
+      if (!num) return false;
+      if (/^0\b|^0 /.test(n) || +num[0] < 30) return false;
+      return true;
+    }
+    var tv = v ? v.tramos.filter(function (t) { return vencido(t.label); }) : [];
+    var montoV = tv.reduce(function (s, t) { return s + t.valor; }, 0);
+    var pV = v && v.total ? montoV / v.total * 100 : null;
     out.push({
-      grupo: 'Financiero', titulo: 'Deuda en la calle · ' + (ult ? ult.label.toLowerCase() : 'más de 60 días'),
-      valor: p60 != null ? nf0.format(p60) + '%' : null,
-      ref: p60 != null ? M(ult.valor) + ' de ' + M(v.total) + ' · corte ' + F(v.fecha) : 'Sin datos de vencimientos',
-      estado: color(p60, U.deudaVencida, 'menor'),
-      n: p60, u: U.deudaVencida, sentido: 'menor', unidad: '%', escala: [0, 40]
+      grupo: 'Financiero', titulo: 'Deuda en la calle vencida', ancha: true,
+      valor: pV != null ? nf0.format(pV) + '%' : null,
+      ref: pV != null ? M(montoV) + ' vencido de ' + M(v.total) + ' en la calle · menos de 30 días no se considera vencido · corte ' + F(v.fecha) : 'Sin datos de vencimientos',
+      tramos: pV != null ? tv.map(function (t) { return { label: t.label, pct: t.valor / v.total * 100, valor: t.valor }; }) : null,
+      estado: color(pV, U.deudaVencida, 'menor'),
+      n: pV, u: U.deudaVencida, sentido: 'menor', unidad: '%', escala: [0, 60]
     });
 
     // 7. Balance ácido como índice: (caja + cheques + cuentas a cobrar) / (proveedores + ch. propio)
@@ -1124,11 +1143,15 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
         }).join('') + '</ul>' : '') +
         '</article>';
     }
-    return '<article class="luz s-' + it.estado + '">' +
+    return '<article class="luz' + (it.ancha ? ' ancha' : '') + ' s-' + it.estado + '">' +
       '<div class="luz-cab"><h3>' + esc(it.titulo) + '</h3>' +
       '<span class="luz-estado"><span class="foco"></span>' + NOMBRE[it.estado] + '</span></div>' +
       '<div class="luz-val">' + (it.valor != null ? esc(it.valor) : '—') + '</div>' +
       '<p class="luz-ref">' + esc(it.ref) + '</p>' +
+      (it.tramos ? '<div class="tramos-v">' + it.tramos.map(function (t, k) {
+        return '<div class="tv tv' + Math.min(k, 2) + '"><span class="tv-rot">' + esc(t.label) + '</span>' +
+          '<span class="tv-val">' + nf0.format(t.pct) + '%</span><span class="tv-m">' + M(t.valor) + '</span></div>';
+      }).join('') + '</div>' : '') +
       zonas(it) +
       (it.regla && it.estado !== 'gris' ? '<ul class="leyenda-luz" aria-label="Rangos de cada color">' + it.regla.map(function (r) {
         return '<li class="s-' + r.estado + (r.estado === it.estado ? ' actual' : '') + '"><span class="foco"></span><span>' + esc(r.texto) + '</span></li>';
