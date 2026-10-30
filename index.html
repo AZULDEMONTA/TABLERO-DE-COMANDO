@@ -233,6 +233,18 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
 .zonas .z-rojo { background: rgba(255, 92, 92, .35); }
 .zonas b { position: absolute; top: -5px; bottom: -5px; width: 3px; margin-left: -1px; background: var(--tinta); }
 @media (max-width: 640px) { .res-txt h2 { font-size: 22px; } .resumen { padding: 20px; } }
+.partes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.parte { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.parte + .parte { border-left: 1px solid var(--borde); padding-left: 12px; }
+.parte-cab { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tenue); }
+.parte-cab .foco { width: 8px; height: 8px; }
+.parte-val { font-family: var(--mono); font-size: 28px; font-weight: 500; letter-spacing: -.02em; line-height: 1.1; color: var(--s); }
+.parte.s-gris .parte-val { color: var(--tenue); }
+.parte .luz-ref { font-size: 12px; }
+.luz.ancha { grid-column: span 2; }
+.partes { gap: 20px; }
+.parte + .parte { padding-left: 20px; }
+@media (max-width: 640px) { .luz.ancha { grid-column: auto; } .partes { grid-template-columns: 1fr; } .parte + .parte { border-left: 0; padding-left: 0; border-top: 1px solid var(--borde); padding-top: 12px; } }
   </style>
 </head>
 <body>
@@ -969,14 +981,30 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
       n: pePct, u: U.equilibrio, sentido: 'mayor', unidad: '%', escala: [60, 140]
     });
 
-    // 4. Crecimiento real acumulado del año vs. año anterior ajustado por inflación
-    var real = a.varReal != null ? a.varReal * 100 : null;
+    // 4. Crecimiento real vs. año anterior, ajustado por inflación, en dos partes:
+    //    el mes elegido (en curso: proyección al cierre) y el acumulado a último mes cerrado.
+    var infl = nf0.format(a.inflacion * 100) + '%';
+    var mesIt = a.meses[+d.mes.split('-')[1] - 1];
+    var rMes = mesIt && mesIt.varReal != null ? mesIt.varReal * 100 : null;
+    var cerr = a.meses.filter(function (x) { return x.estado === 'cerrado' && x.anterior != null; });
+    var ultCerr = cerr.length ? cerr[cerr.length - 1] : null;
+    var rAcu = a.varReal != null ? a.varReal * 100 : null;
+    var partes = [
+      { rotulo: mesIt.nombre + (d.esActual ? ' · mes en curso' : '') + ' vs. ' + (a.anio - 1),
+        valor: rMes != null ? SP(rMes, true) + '%' : null, estado: color(rMes, U.crecimientoReal, 'mayor'),
+        ref: rMes == null ? (mesIt.anterior == null ? 'Sin ' + mesIt.nombre.toLowerCase() + ' ' + (a.anio - 1) + ' para comparar' : 'Sin facturación del mes')
+          : (d.esActual ? 'Proyección al cierre ' + M(mesIt.proyeccion) : 'Facturado ' + M(mesIt.actual)) + ' · ' + (a.anio - 1) + ' ajustado ' + M(mesIt.ajustado) },
+      { rotulo: 'Acumulado' + (ultCerr ? ' enero a ' + ultCerr.nombre.toLowerCase() : '') + ' vs. ' + (a.anio - 1),
+        valor: rAcu != null ? SP(rAcu, true) + '%' : null, estado: color(rAcu, U.crecimientoReal, 'mayor'),
+        ref: rAcu == null ? 'Sin meses cerrados con ' + (a.anio - 1) + ' para comparar'
+          : 'Facturado ' + M(a.ytdActual) + ' · ' + (a.anio - 1) + ' ajustado ' + M(a.ytdAjustado) }
+    ];
+    var peor = partes.map(function (x) { return x.estado; }).sort(function (x, y) { return PESO[x] - PESO[y]; })[0];
     out.push({
       grupo: 'Comercial', titulo: 'Crecimiento real vs. ' + (a.anio - 1),
-      valor: real != null ? SP(real, true) + '%' : null,
-      ref: real != null ? 'Facturación de ' + a.cerrados + (a.cerrados === 1 ? ' mes cerrado' : ' meses cerrados') + ', ' + (a.anio - 1) + ' ajustado ' + nf0.format(a.inflacion * 100) + '%' : 'Sin facturación de ' + (a.anio - 1) + ' para comparar',
-      estado: color(real, U.crecimientoReal, 'mayor'),
-      n: real, u: U.crecimientoReal, sentido: 'mayor', unidad: '%', escala: [-25, 15]
+      partes: partes, ancha: true, nota: 'Facturación de ' + (a.anio - 1) + ' ajustada por inflación ' + infl + '. En el mes en curso se compara la proyección al cierre.',
+      valor: null, ref: '',
+      estado: peor, u: U.crecimientoReal, sentido: 'mayor', unidad: '%'
     });
 
     // 5. Backorder: vendido que todavía no se facturó
@@ -1077,7 +1105,25 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
       '<b style="left:' + m + '%"></b></div>';
   }
 
+  function parte(x) {
+    return '<div class="parte s-' + x.estado + '"><div class="parte-cab"><span class="foco"></span>' + esc(x.rotulo) + '</div>' +
+      '<div class="parte-val">' + (x.valor != null ? esc(x.valor) : '—') + '</div>' +
+      '<p class="luz-ref">' + esc(x.ref) + '</p></div>';
+  }
+
   function tarjeta(it) {
+    if (it.partes) {
+      var usados = it.partes.map(function (x) { return x.estado; });
+      return '<article class="luz ancha s-' + it.estado + '">' +
+        '<div class="luz-cab"><h3>' + esc(it.titulo) + '</h3>' +
+        '<span class="luz-estado"><span class="foco"></span>' + NOMBRE[it.estado] + '</span></div>' +
+        '<div class="partes">' + it.partes.map(parte).join('') + '</div>' +
+        (it.nota ? '<p class="luz-ref">' + esc(it.nota) + '</p>' : '') +
+        (it.regla && it.estado !== 'gris' ? '<ul class="leyenda-luz" aria-label="Rangos de cada color">' + it.regla.map(function (r) {
+          return '<li class="s-' + r.estado + (usados.indexOf(r.estado) > -1 ? ' actual' : '') + '"><span class="foco"></span><span>' + esc(r.texto) + '</span></li>';
+        }).join('') + '</ul>' : '') +
+        '</article>';
+    }
     return '<article class="luz s-' + it.estado + '">' +
       '<div class="luz-cab"><h3>' + esc(it.titulo) + '</h3>' +
       '<span class="luz-estado"><span class="foco"></span>' + NOMBRE[it.estado] + '</span></div>' +
