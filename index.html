@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Semáforo de gestión</title>
+  <title>Tablero de Comando</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -181,76 +181,128 @@ h1, h2, h3 { margin: 0; }
   .n34 { font-size: 30px; }
 }
 
-/* ---------- Vista semáforo ---------- */
+/* ---------- Tablero unificado: titular, cambios de la semana, semáforo por área y detalle ---------- */
 :root { --verde: #C6F432; --amarillo: #FFB547; --rojo: #FF5C5C; --apagado: #2A3340; }
-.s-verde { --s: var(--verde); }
-.s-amarillo { --s: var(--amarillo); }
-.s-rojo { --s: var(--rojo); }
-.s-gris { --s: #5B6675; }
-a.enlace { color: var(--tinta); text-decoration: none; display: inline-flex; align-items: center; min-height: 40px; }
-a.enlace:hover { border-color: var(--acento); color: var(--acento); }
+.s-verde { --s: var(--verde); } .s-amarillo { --s: var(--amarillo); } .s-rojo { --s: var(--rojo); } .s-gris { --s: #5B6675; }
 .foco { width: 10px; height: 10px; border-radius: 50%; background: var(--s); display: inline-block; flex: none; }
+.pie a { color: var(--tenue); }
+.pie a:hover { color: var(--acento); }
 
-.resumen { display: flex; flex-wrap: wrap; align-items: center; gap: 24px 32px; background: var(--tarjeta); border: 1px solid var(--borde); border-left: 4px solid var(--s); border-radius: 0; padding: 24px 28px; }
-.semaforo { display: flex; flex-direction: column; gap: 8px; background: #0A0E13; border: 1px solid var(--borde); border-radius: 14px; padding: 10px; }
-.semaforo i { width: 26px; height: 26px; border-radius: 50%; background: var(--apagado); }
-.resumen.s-rojo .semaforo .l-r { background: var(--rojo); }
-.resumen.s-amarillo .semaforo .l-a { background: var(--amarillo); }
-.resumen.s-verde .semaforo .l-v { background: var(--verde); }
-.res-txt { flex: 1 1 320px; display: flex; flex-direction: column; gap: 6px; }
-.res-txt .sup { font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--tenue); }
-.res-txt h2 { font-size: 28px; font-weight: 700; letter-spacing: -.01em; color: var(--s); }
-.res-txt p { margin: 0; color: var(--tenue); font-size: 14px; }
-.cuentas { display: flex; gap: 10px; flex-wrap: wrap; }
-.cuenta { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 92px; background: var(--suave); border: 1px solid var(--borde); border-radius: 6px; padding: 12px 14px; font-size: 12px; color: var(--tenue); }
-.cuenta .num { font-size: 28px; color: var(--tinta); line-height: 1; }
+/* Titular */
+.titular { display: grid; grid-template-columns: minmax(280px, 1.3fr) repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--borde); border: 1px solid var(--borde); }
+.titular > div { background: var(--tarjeta); padding: 20px 22px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.titular .estado { border-left: 4px solid var(--s); flex-direction: row; align-items: center; gap: 18px; }
+.estado-txt { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.estado-txt h2 { font-size: 24px; font-weight: 700; color: var(--s); text-wrap: balance; }
+.estado-txt p { margin: 0; font-size: 13px; color: var(--tenue); line-height: 1.45; }
+.semaforo { display: flex; flex-direction: column; gap: 6px; background: #0A0E13; border: 1px solid var(--borde); border-radius: 12px; padding: 8px; flex: none; }
+.semaforo i { width: 20px; height: 20px; border-radius: 50%; background: var(--apagado); }
+.semaforo.on-r .l-r { background: var(--rojo); } .semaforo.on-a .l-a { background: var(--amarillo); } .semaforo.on-v .l-v { background: var(--verde); }
+.cuentas { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--tenue); margin-top: 2px; }
+.cuentas span { display: inline-flex; align-items: center; gap: 6px; }
+.cuentas .foco { width: 8px; height: 8px; }
+.preg { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--tenue); }
+.big { font-family: var(--mono); font-size: 40px; font-weight: 500; letter-spacing: -.03em; color: var(--s); line-height: 1; }
+.tit-sub { font-size: 13px; color: var(--tenue); line-height: 1.45; }
+.tit-pie { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--s); font-weight: 600; }
+.tit-pie .foco { width: 8px; height: 8px; }
 
-.grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
-.luz { background: var(--tarjeta); border: 1px solid var(--borde); border-top: 3px solid var(--s); border-radius: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.luz.s-rojo { border-color: rgba(255, 92, 92, .45); border-top-color: var(--rojo); }
-.luz-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.luz-cab h3 { min-width: 0; }
-.luz-cab { align-items: flex-start; }
-.luz-estado { white-space: nowrap; }
+/* Qué cambió */
+.cambios { background: var(--tarjeta); border: 1px solid var(--borde); padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.cab-linea { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.cab-linea h2 { font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.cab-linea .nota { font-size: 12px; color: var(--tenue); font-family: var(--mono); }
+.cambios ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.cambios li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.4; background: var(--suave); padding: 10px 12px; min-width: 0; }
+.cambios li .fl { font-family: var(--mono); color: var(--s); flex: none; width: 14px; text-align: center; }
+.cambios li b { font-weight: 600; }
+.cambios li .d { color: var(--tenue); display: block; font-size: 12px; margin-top: 2px; }
+.vacio-c { margin: 0; font-size: 13px; color: var(--tenue); }
+
+/* Bloques y tarjetas */
 .bloque { display: flex; flex-direction: column; gap: 12px; }
-.bloque-cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 16px; padding: 4px 2px 0; border-bottom: 1px solid var(--borde); padding-bottom: 10px; }
-.bloque-cab h2 { font-size: 14px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta); }
+.bloque-cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 16px; border-bottom: 1px solid var(--borde); padding-bottom: 10px; }
+.bloque-cab h2 { font-size: 14px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.bloque-cab .pregunta { font-size: 13px; color: var(--tenue); font-weight: 400; letter-spacing: 0; text-transform: none; margin-left: 10px; }
 .bloque-cuenta { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--tenue); }
 .bloque-cuenta > span { display: inline-flex; align-items: center; gap: 6px; }
-.luz-estado { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--s); }
-.luz h3 { font-size: 15px; font-weight: 600; }
-.luz-val { font-family: var(--mono); font-size: 34px; font-weight: 500; letter-spacing: -.02em; color: var(--s); line-height: 1.1; }
+.bloque-cuenta .foco { width: 8px; height: 8px; }
+.grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); grid-auto-flow: dense; gap: 12px; }
+.luz { background: var(--tarjeta); border: 1px solid var(--borde); border-top: 3px solid var(--s); display: flex; flex-direction: column; min-width: 0; }
+.luz.s-rojo { border-color: rgba(255, 92, 92, .45); border-top-color: var(--rojo); }
+.luz.ancha { grid-column: span 2; }
+.luz.abierta { grid-column: 1 / -1; }
+.luz-btn { cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; flex: 1; }
+.luz-btn:focus-visible { outline: 2px solid var(--acento); outline-offset: -2px; }
+.luz-btn:hover h3 { color: var(--acento); }
+.luz-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.luz-cab h3 { font-size: 15px; font-weight: 600; min-width: 0; text-wrap: balance; }
+.luz-estado { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--s); white-space: nowrap; }
+.val-fila { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
+.luz-val { font-family: var(--mono); font-size: 32px; font-weight: 500; letter-spacing: -.02em; color: var(--s); line-height: 1.05; }
 .luz.s-gris .luz-val { color: var(--tenue); }
-.luz-ref { margin: 0; font-size: 13px; color: var(--tenue); }
+.luz-ref { margin: 0; font-size: 13px; color: var(--tenue); line-height: 1.4; }
+.tend { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; }
+.tend svg { display: block; }
+.tend-txt { font-size: 11px; color: var(--tenue); white-space: nowrap; }
+.tend-txt.mejora { color: var(--verde); } .tend-txt.empeora { color: var(--rojo); }
+.partes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.parte { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.parte + .parte { border-left: 1px solid var(--borde); padding-left: 20px; }
+.parte-cab { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tenue); }
+.parte-cab .foco { width: 8px; height: 8px; }
+.parte-val { font-family: var(--mono); font-size: 28px; font-weight: 500; letter-spacing: -.02em; line-height: 1.1; color: var(--s); }
+.parte .luz-ref { font-size: 12px; }
+.tramos-mini { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--tenue); }
+.tramos-mini b { font-family: var(--mono); font-weight: 500; color: var(--tinta); }
 .leyenda-luz { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .leyenda-luz li { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; line-height: 1.35; color: var(--tenue); opacity: .65; min-width: 0; }
 .leyenda-luz li .foco { width: 8px; height: 8px; margin-top: 4px; }
 .leyenda-luz li.actual { opacity: 1; color: var(--s); font-weight: 600; }
-.zonas { position: relative; display: flex; height: 8px; gap: 2px; margin: 6px 0 2px; }
-.zonas i { display: block; height: 100%; }
-.zonas .z-verde { background: rgba(198, 244, 50, .35); }
-.zonas .z-amarillo { background: rgba(255, 181, 71, .35); }
-.zonas .z-rojo { background: rgba(255, 92, 92, .35); }
-.zonas b { position: absolute; top: -5px; bottom: -5px; width: 3px; margin-left: -1px; background: var(--tinta); }
-@media (max-width: 640px) { .res-txt h2 { font-size: 22px; } .resumen { padding: 20px; } }
-.partes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.parte { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.parte + .parte { border-left: 1px solid var(--borde); padding-left: 12px; }
-.parte-cab { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tenue); }
-.parte-cab .foco { width: 8px; height: 8px; }
-.parte-val { font-family: var(--mono); font-size: 28px; font-weight: 500; letter-spacing: -.02em; line-height: 1.1; color: var(--s); }
-.parte.s-gris .parte-val { color: var(--tenue); }
-.parte .luz-ref { font-size: 12px; }
-.luz.ancha { grid-column: span 2; }
-.partes { gap: 20px; }
-.parte + .parte { padding-left: 20px; }
-@media (max-width: 640px) { .luz.ancha { grid-column: auto; } .partes { grid-template-columns: 1fr; } .parte + .parte { border-left: 0; padding-left: 0; border-top: 1px solid var(--borde); padding-top: 12px; } }
+.resp { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--borde); padding-top: 10px; }
+.resp-quien { font-size: 12px; color: var(--tenue); }
+.resp-quien b { color: var(--tinta); font-weight: 500; }
+.coment { margin: 0; font-size: 13px; line-height: 1.4; color: var(--tinta); background: var(--suave); border-left: 2px solid var(--s); padding: 6px 10px; }
+.abrir { font-size: 12px; color: var(--tenue); font-family: var(--mono); align-self: flex-end; margin-top: auto; }
+.luz.abierta .abrir, .luz-btn:hover .abrir { color: var(--acento); }
+
+/* Detalle */
+.detalle { border-top: 1px dashed var(--borde); padding: 18px; display: flex; flex-direction: column; gap: 14px; background: var(--suave); cursor: default; }
+.det-tit { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--acento); }
+.det-nota { margin: 0; font-size: 13px; color: var(--tenue); line-height: 1.45; }
+.filas { display: flex; flex-direction: column; gap: 10px; }
+.fila-v { display: grid; grid-template-columns: 160px minmax(0, 1fr) 210px; gap: 12px; align-items: center; font-size: 13px; }
+.fila-v .nom { color: var(--tinta); min-width: 0; overflow-wrap: anywhere; }
+.fila-v .num { font-family: var(--mono); text-align: right; color: var(--tenue); }
+.fila-v .barra { position: relative; height: 10px; background: var(--apagado); border-radius: 0; }
+.fila-v .barra .r { position: absolute; left: 0; top: 0; bottom: 0; background: var(--s); }
+.fila-v .barra .m { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--tinta); }
+.leyenda { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: var(--tenue); text-transform: none; font-family: inherit; justify-content: flex-start; }
+.leyenda i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
+.graf-wrap { overflow-x: auto; }
+.graf-wrap svg { display: block; min-width: 640px; width: 100%; height: auto; max-height: 280px; }
+.tabla { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.tabla > div { display: flex; flex-direction: column; min-width: 0; }
+.tabla .t-cab { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--tenue); border-bottom: 1px solid var(--borde); padding-bottom: 6px; }
+.tabla .t-r { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--linea); }
+.tabla .t-r span:last-child { font-family: var(--mono); white-space: nowrap; }
+.tabla .t-tot { font-weight: 600; border-bottom: 0; }
 .tramos-v { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.tv { display: flex; flex-direction: column; gap: 2px; background: var(--suave); border-top: 3px solid; padding: 10px 12px; min-width: 0; }
-.tv0 { border-top-color: #E8C547; } .tv1 { border-top-color: #FF9A4D; } .tv2 { border-top-color: var(--rojo); }
+.tv { display: flex; flex-direction: column; gap: 2px; background: var(--tarjeta); border-top: 3px solid; padding: 10px 12px; min-width: 0; }
 .tv-rot { font-size: 12px; color: var(--tenue); }
 .tv-val { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--tinta); }
 .tv-m { font-family: var(--mono); font-size: 12px; color: var(--tenue); }
+.infl label { color: var(--tenue); }
+
+@media (max-width: 900px) { .titular { grid-template-columns: 1fr 1fr; } .titular .estado { grid-column: 1 / -1; } }
+@media (max-width: 640px) {
+  .titular { grid-template-columns: 1fr; }
+  .big { font-size: 34px; }
+  .luz.ancha { grid-column: auto; }
+  .partes { grid-template-columns: 1fr; } .parte + .parte { border-left: 0; padding-left: 0; border-top: 1px solid var(--borde); padding-top: 12px; }
+  .fila-v { grid-template-columns: 1fr; gap: 4px; } .fila-v .num { text-align: left; }
+  .tramos-v { grid-template-columns: 1fr; }
+}
   </style>
 </head>
 <body>
@@ -754,16 +806,18 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
 })(this);
   </script>
   <script>
-/* Vista semáforo: cada indicador responde "¿estamos bien en esto?" con verde, amarillo o rojo. */
+/* Tablero unificado: una sola página en tres niveles.
+   1. Titular: estado general + ¿llegamos al mes? + ¿nos están pagando?
+   2. Qué cambió esta semana (automático, comparando los dos últimos cortes) y semáforo por área.
+   3. Detalle: cada tarjeta se abre con su apertura. */
 (function () {
   'use strict';
   var CFG = window.TABLERO_CONFIG || {};
   var C = window.TableroCalc;
   var app = document.getElementById('app');
 
-  /* Indicadores del semáforo y sus umbrales por defecto.
-     Los umbrales se cargan en la pestaña UMBRALES de la planilla del tablero; estos valores
-     se usan solo si la pestaña no está publicada o si una fila falta o está mal cargada.
+  /* Indicadores y umbrales por defecto. Los umbrales se cargan en la pestaña UMBRALES;
+     estos valores se usan solo si la pestaña no está publicada o si una fila falta o está mal cargada.
      sentido "mayor" = más es mejor · "menor" = menos es mejor. */
   var DEF = [
     { key: 'ventaVsRitmo', nombre: 'Venta vs. ritmo del mes', alias: ['venta vs ritmo', 'venta'], sentido: 'mayor', verde: 0, rojo: -10 },
@@ -775,28 +829,26 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
     { key: 'clientesActivos', nombre: 'Clientes activos', alias: ['clientes activos'], sentido: 'mayor', verde: 0, rojo: -10 },
     { key: 'concentracion', nombre: 'Concentración de clientes', alias: ['concentracion de clientes', 'concentracion'], sentido: 'menor', verde: 60, rojo: 75 },
     { key: 'deudaVencida', nombre: 'Deuda vencida', alias: ['deuda vencida', 'deuda en la calle', 'deuda'], sentido: 'menor', verde: 20, rojo: 35 },
-    { key: 'acido', nombre: 'Liquidez ácida', alias: ['liquidez acida', 'balance acido', 'acido'], sentido: 'mayor', verde: 1.2, rojo: 1 },
-    { key: 'solvencia', nombre: 'Solvencia', alias: ['solvencia'], sentido: 'mayor', verde: 1.5, rojo: 1 }
+    { key: 'acido', nombre: 'Liquidez ácida', alias: ['liquidez acida', 'balance acido', 'acido'], sentido: 'mayor', verde: 1.2, rojo: 1 }
   ];
-  var U = {}, ORIGEN_U = 'defecto';
+  var U = {}, EXTRA = {}, ORIGEN_U = 'defecto';
 
   function norm(s) {
     return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '')
       .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   }
-  // [a, b] interno: "mayor" → [rojo, verde]; "menor" → [verde, rojo]
   function par(def, verde, rojo) { return def.sentido === 'mayor' ? [rojo, verde] : [verde, rojo]; }
 
-  /* Pestaña UMBRALES: Indicador | Mejor si | Límite verde | Límite rojo | Unidad | Qué mide
-     Solo se leen "Indicador", "Límite verde" y "Límite rojo"; el resto es ayuda para quien carga. */
+  /* Pestaña UMBRALES: Indicador | Mejor si | Límite verde | Límite rojo | Unidad | Qué mide | Responsable | Comentario
+     Se leen "Indicador", "Límite verde" y "Límite rojo"; "Responsable" y "Comentario" son opcionales. */
   function aplicarUmbrales(rows) {
     var avisos = [], leidos = 0;
-    U = {}; ORIGEN_U = 'defecto';
+    U = {}; EXTRA = {}; ORIGEN_U = 'defecto';
     DEF.forEach(function (d) { U[d.key] = par(d, d.verde, d.rojo); });
     if (!rows || !rows.length) return avisos;
     var h = rows[0].map(norm);
     function col(re) { for (var i = 0; i < h.length; i++) if (re.test(h[i])) return i; return -1; }
-    var cI = col(/^indicador/), cV = col(/verde/), cR = col(/rojo/);
+    var cI = col(/^indicador/), cV = col(/verde/), cR = col(/rojo/), cP = col(/^responsable/), cC = col(/^comentario/);
     if (cI < 0 || cV < 0 || cR < 0) {
       avisos.push('La pestaña UMBRALES necesita las columnas "Indicador", "Límite verde" y "Límite rojo". Se usan los umbrales por defecto.');
       return avisos;
@@ -806,9 +858,13 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
       var n = norm(r[cI]);
       if (!n) return;
       var d = null;
-      DEF.forEach(function (x) { if (!d && (norm(x.nombre) === n)) d = x; });
+      DEF.forEach(function (x) { if (!d && norm(x.nombre) === n) d = x; });
       DEF.forEach(function (x) { if (!d && x.alias.some(function (a) { return n.indexOf(a) === 0; })) d = x; });
-      if (!d) { avisos.push('UMBRALES: no reconozco el indicador "' + r[cI] + '".'); return; }
+      if (!d) {
+        if (n.indexOf('solvencia') !== 0) avisos.push('UMBRALES: no reconozco el indicador "' + r[cI] + '".');
+        return;
+      }
+      EXTRA[d.key] = { resp: cP > -1 ? String(r[cP] || '').trim() : '', com: cC > -1 ? String(r[cC] || '').trim() : '' };
       var v = num(r[cV]), ro = num(r[cR]);
       if (v == null || ro == null) { avisos.push('UMBRALES: a "' + d.nombre + '" le falta un límite. Se usa el valor por defecto.'); return; }
       var ok = d.sentido === 'mayor' ? ro <= v : v <= ro;
@@ -838,14 +894,14 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
     { key: 'umbrales', nombre: 'UMBRALES', url: tb.umbrales, obligatoria: false }
   ].filter(function (f) { return f.url; });
 
-  var estado = { tablas: null, mes: null, leido: null, error: null, avisos: [] };
+  var estado = { tablas: null, mes: null, leido: null, error: null, avisos: [], abiertas: {} };
 
   // ---------- Formato ----------
   var nf0 = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
   var nf1 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   var nf2 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var nfx = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
   function M(v) { return v == null || !isFinite(v) ? '—' : (v < 0 ? '−$' : '$') + nf1.format(Math.abs(v) / 1e6) + 'M'; }
-  function P1(n) { return n == null || !isFinite(n) ? '—' : nf1.format(n) + '%'; }
   function SP(n, dec) { if (n == null || !isFinite(n)) return '—'; return (n > 0 ? '+' : n < 0 ? '−' : '') + (dec ? nf1 : nf0).format(Math.abs(n)); }
   function X(v) { return v == null || !isFinite(v) ? '—' : nf2.format(v) + 'x'; }
   function F(d) { return d ? (d.d < 10 ? '0' : '') + d.d + '/' + (d.m < 10 ? '0' : '') + d.m : '—'; }
@@ -855,8 +911,9 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  function sum(a) { return a.reduce(function (s, x) { return s + x; }, 0); }
 
-  // ---------- Lectura (igual que el tablero) ----------
+  // ---------- Lectura ----------
   function leer(f) {
     var u = f.url + (f.url.indexOf('?') > -1 ? '&' : '?') + '_t=' + Date.now();
     var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -893,19 +950,15 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
   }
 
   // ---------- Reglas del semáforo ----------
-  /* "mayor": más es mejor.  u = [a, b]  →  menos de a rojo · de a a b amarillo · desde b verde.
-     "menor": menos es mejor. u = [a, b]  →  hasta a verde · hasta b amarillo · más de b rojo. */
   function color(valor, u, sentido) {
     if (valor == null || !isFinite(valor) || !u) return 'gris';
     if (sentido === 'menor') return valor <= u[0] ? 'verde' : valor <= u[1] ? 'amarillo' : 'rojo';
     return valor < u[0] ? 'rojo' : valor < u[1] ? 'amarillo' : 'verde';
   }
-  // Rangos de cada color en palabras: [{ estado, texto }], siempre en orden verde, amarillo, rojo.
-  var nfx = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
   function regla(u, sentido, unidad) {
     if (!u) return null;
     function n(v) { return (v < 0 ? '−' : '') + (unidad === 'x' ? nfx : nf0).format(Math.abs(v)); }
-    function f(v) { return n(v) + (unidad === 'x' ? 'x' : unidad === 'pts' ? ' pts' : '%'); }
+    function f(v) { return n(v) + (unidad === 'x' ? 'x' : '%'); }
     var a = u[0], b = u[1], out = [];
     if (sentido === 'menor') {
       out.push({ estado: 'verde', texto: 'Hasta ' + f(a) });
@@ -918,295 +971,587 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
     }
     return out;
   }
+  var NOMBRE = { rojo: 'Crítico', amarillo: 'Alerta', verde: 'En orden', gris: 'Sin dato' };
+  var PESO = { rojo: 0, amarillo: 1, verde: 2, gris: 3 };
 
-  /* Clientes del mes desde la pestaña Ventas (Fecha | Vendedor | Cliente | Importe).
-     Mismo filtro que VentasTrack: fecha válida, con vendedor e importe distinto de cero.
-     Un cliente es activo si su compra neta del mes es mayor a cero.
+  // ---------- Ventas por cliente (VentasTrack) ----------
+  var cacheVentas = { rows: null, data: null };
+  function ventasPlanas() {
+    var rows = estado.tablas && estado.tablas.ventas;
+    if (cacheVentas.rows === rows) return cacheVentas.data;
+    var out = { ok: false, sinCliente: false, filas: [] };
+    if (rows && rows.length > 1) {
+      var h = rows[0].map(norm);
+      var col = function (list) { for (var i = 0; i < h.length; i++) if (list.indexOf(h[i]) > -1) return i; return -1; };
+      var cF = col(['fecha', 'date']), cV = col(['vendedor', 'seller']), cC = col(['cliente', 'client', 'razon social']), cI = col(['importe', 'amount', 'monto', 'total']);
+      if (cF > -1 && cV > -1 && cI > -1) {
+        out.ok = true; out.sinCliente = cC < 0;
+        rows.slice(1).forEach(function (r) {
+          var f = C.parseDate(r[cF]), imp = C.parseAmt(r[cI]), vend = String(r[cV] || '').trim();
+          if (!f || !vend || !imp) return;
+          var nom = cC > -1 ? String(r[cC] || '').trim() : '';
+          out.filas.push({ f: f, vend: vend, imp: imp, cli: norm(nom), nom: nom });
+        });
+      }
+    }
+    cacheVentas = { rows: rows, data: out };
+    return out;
+  }
+
+  /* Clientes del mes. Un cliente es activo si su compra neta del mes es mayor a cero.
      En el mes en curso se compara contra el mes anterior hasta el mismo día. */
   function clientes(d) {
-    var rows = estado.tablas && estado.tablas.ventas;
-    if (!rows || rows.length < 2) return null;
-    var h = rows[0].map(norm);
-    function col(list) { for (var i = 0; i < h.length; i++) if (list.indexOf(h[i]) > -1) return i; return -1; }
-    var cF = col(['fecha', 'date']), cV = col(['vendedor', 'seller']), cC = col(['cliente', 'client', 'razon social']), cI = col(['importe', 'amount', 'monto', 'total']);
-    if (cC < 0) return { error: 'La pestaña Ventas de VentasTrack no tiene columna Cliente' };
-    if (cF < 0 || cV < 0 || cI < 0) return null;
+    var V = ventasPlanas();
+    if (!V.ok) return null;
+    if (V.sinCliente) return { error: 'La pestaña Ventas de VentasTrack no tiene columna Cliente' };
     var p = d.mes.split('-'), y = +p[0], m = +p[1];
     var yA = m === 1 ? y - 1 : y, mA = m === 1 ? 12 : m - 1;
     var mesAnt = yA + '-' + (mA < 10 ? '0' : '') + mA;
     var tope = d.esActual ? new Date().getDate() : 31;
-    var act = {}, ant = {}, hayAnt = false;
-    rows.slice(1).forEach(function (r) {
-      var f = C.parseDate(r[cF]), imp = C.parseAmt(r[cI]), cli = norm(r[cC]);
-      if (!f || !String(r[cV] || '').trim() || !imp || !cli) return;
-      if (f.mes === d.mes) act[cli] = (act[cli] || 0) + imp;
-      else if (f.mes === mesAnt) { hayAnt = true; if (f.d <= tope) ant[cli] = (ant[cli] || 0) + imp; }
+    var act = {}, ant = {}, antTot = {}, nombres = {}, hayAnt = false;
+    V.filas.forEach(function (r) {
+      if (!r.cli) return;
+      nombres[r.cli] = r.nom;
+      if (r.f.mes === d.mes) act[r.cli] = (act[r.cli] || 0) + r.imp;
+      else if (r.f.mes === mesAnt) {
+        hayAnt = true;
+        antTot[r.cli] = (antTot[r.cli] || 0) + r.imp;
+        if (r.f.d <= tope) ant[r.cli] = (ant[r.cli] || 0) + r.imp;
+      }
     });
-    function positivos(o) { return Object.keys(o).map(function (k) { return o[k]; }).filter(function (x) { return x > 0; }); }
-    var montos = positivos(act).sort(function (a, b) { return b - a; });
-    var n = montos.length, nAnt = positivos(ant).length;
-    var total = montos.reduce(function (s, x) { return s + x; }, 0);
-    var top = Math.max(1, Math.ceil(n * 0.2));
-    var topSum = montos.slice(0, top).reduce(function (s, x) { return s + x; }, 0);
+    function activos(o) { return Object.keys(o).filter(function (k) { return o[k] > 0; }); }
+    var la = activos(act), lp = activos(ant);
+    var orden = la.map(function (k) { return { nom: nombres[k], imp: act[k] }; }).sort(function (a, b) { return b.imp - a.imp; });
+    var total = sum(orden.map(function (x) { return x.imp; }));
+    var top = Math.max(1, Math.ceil(la.length * 0.2));
+    var topSum = sum(orden.slice(0, top).map(function (x) { return x.imp; }));
+    var setA = {}; la.forEach(function (k) { setA[k] = 1; });
+    var setP = {}; lp.forEach(function (k) { setP[k] = 1; });
+    var dejaron = activos(antTot).filter(function (k) { return !setA[k]; })
+      .map(function (k) { return { nom: nombres[k], imp: antTot[k] }; }).sort(function (a, b) { return b.imp - a.imp; });
     return {
-      activos: n, activosAnt: nAnt, mesAnt: C.MESES[mA - 1].toLowerCase(),
-      varAct: hayAnt && nAnt ? (n / nAnt - 1) * 100 : null,
-      top: top, conc: total ? topSum / total * 100 : null, mayor: total ? montos[0] / total * 100 : null
+      activos: la.length, activosAnt: lp.length, mesAnt: C.MESES[mA - 1].toLowerCase(),
+      varAct: hayAnt && lp.length ? (la.length / lp.length - 1) * 100 : null,
+      siguen: la.filter(function (k) { return setP[k]; }).length,
+      nuevos: la.filter(function (k) { return !setP[k]; }).length,
+      dejaron: dejaron, total: total, orden: orden,
+      top: top, conc: total ? topSum / total * 100 : null, mayor: total ? orden[0].imp / total * 100 : null
     };
   }
 
-  function indicadores(d) {
-    var e = d.empresa, f = d.facturacion, a = d.anual, b = d.balance, v = d.vencimientos, out = [];
+  // ---------- Cortes semanales de la planilla del tablero ----------
+  function colPor(h, alias) {
+    var i, j;
+    for (i = 0; i < alias.length; i++) { j = h.indexOf(alias[i]); if (j > -1) return j; }
+    for (i = 0; i < alias.length; i++) for (j = 0; j < h.length; j++) if (h[j].indexOf(alias[i]) === 0) return j;
+    return -1;
+  }
+  function porFecha(a, b) { return a.fecha.key < b.fecha.key ? -1 : a.fecha.key > b.fecha.key ? 1 : 0; }
 
-    // 1. Venta vs ritmo del mes (puntos de avance contra % del mes transcurrido)
+  function cortesBalance(rows) {
+    if (!rows || rows.length < 2) return [];
+    var h = rows[0].map(norm), cf = colPor(h, ['fecha']);
+    if (cf < 0) return [];
+    var cols = {};
+    C.RUBROS.forEach(function (r) { cols[r.key] = colPor(h, r.alias); });
+    var out = [];
+    rows.slice(1).forEach(function (r) {
+      var f = C.parseDate(r[cf]);
+      if (!f) return;
+      var vals = {}, alguno = false;
+      C.RUBROS.forEach(function (ru) { var n = cols[ru.key] > -1 ? C.parseNum(r[cols[ru.key]]) : null; if (n != null) alguno = true; vals[ru.key] = n || 0; });
+      if (!alguno) return;
+      var aA = 0, aP = 0;
+      C.RUBROS.forEach(function (ru) { if (ru.acido) { if (ru.lado === 'activo') aA += vals[ru.key]; else aP += vals[ru.key]; } });
+      out.push({ fecha: f, vals: vals, acA: aA, acP: aP, acido: aP ? aA / aP : null });
+    });
+    return out.sort(porFecha);
+  }
+
+  // Vencido = tramos de 30 días en adelante ("+30", "+40", "+50", "30 a 45", "más de 60"...).
+  function vencido(label) {
+    var n = norm(label);
+    if (/menos|hasta|vencer|no venc|corriente/.test(n) || /^\s*</.test(label)) return false;
+    var num = n.match(/\d+/);
+    if (!num || /^0 /.test(n) || +num[0] < 30) return false;
+    return true;
+  }
+  function cortesVenc(rows) {
+    if (!rows || rows.length < 2) return [];
+    var h = rows[0].map(norm), cf = colPor(h, ['fecha']);
+    if (cf < 0) return [];
+    var tramos = [];
+    rows[0].forEach(function (x, i) {
+      var n = norm(x);
+      if (i === cf || !n || n.indexOf('total') === 0 || n.indexOf('observ') === 0) return;
+      var t = String(x).trim();
+      if (/\d\s*$/.test(t) && !/d[ií]as\s*$/i.test(t)) t += ' días';
+      tramos.push({ col: i, label: t.charAt(0).toUpperCase() + t.slice(1), venc: vencido(x) });
+    });
+    var out = [];
+    rows.slice(1).forEach(function (r) {
+      var f = C.parseDate(r[cf]);
+      if (!f) return;
+      var alguno = false;
+      var ts = tramos.map(function (t) { var x = C.parseNum(r[t.col]); if (x != null) alguno = true; return { label: t.label, venc: t.venc, valor: x || 0 }; });
+      if (!alguno) return;
+      var total = sum(ts.map(function (t) { return t.valor; }));
+      var v = sum(ts.filter(function (t) { return t.venc; }).map(function (t) { return t.valor; }));
+      out.push({ fecha: f, tramos: ts, total: total, vencido: v, pct: total ? v / total * 100 : null });
+    });
+    return out.sort(porFecha);
+  }
+
+  // ---------- Historia de meses (para tendencias) ----------
+  function historia(d, opc) {
+    var ms = d.meses.filter(function (m) { return m <= d.mes; }).sort().slice(-6);
+    return ms.map(function (m) {
+      var dm = m === d.mes ? d : C.calcular(estado.tablas, m, opc);
+      return { mes: m, d: dm, cl: clientes(dm) };
+    });
+  }
+
+  // ---------- Valores de cada indicador para un mes ----------
+  function vPE(dm) {
+    var f = dm.facturacion, base = dm.esActual ? f.proyeccion : f.total;
+    return f.pe && base != null && f.hayDato ? base / f.pe * 100 : null;
+  }
+  function vRitmo(dm) {
+    var vs = dm.vendedores || [];
+    return vs.length ? vs.filter(function (r) { return r.diff >= 0; }).length / vs.length * 100 : null;
+  }
+  function vBO(dm) { return dm.empresa.total > 0 && dm.facturacion.hayDato ? dm.facturacion.boPct : null; }
+
+  function indicadores(d, H, CB, CV) {
+    var e = d.empresa, f = d.facturacion, a = d.anual, out = [];
+    function serie(fn) { return H.map(function (h) { return { et: C.MESES[+h.mes.split('-')[1] - 1].slice(0, 3), v: fn(h) }; }); }
+
     out.push({
-      grupo: 'Comercial', titulo: 'Venta vs. ritmo del mes',
-      valor: e.objetivo ? SP(e.diff) + '%' : null,
+      key: 'ventaVsRitmo', grupo: 'Comercial', titulo: 'Venta vs. ritmo del mes',
+      n: e.objetivo ? e.diff : null, valor: e.objetivo ? SP(e.diff) + '%' : null,
       ref: e.objetivo ? e.p + '% del objetivo con ' + d.mthPct + '% del mes · ' + M(e.total) + ' de ' + M(e.objetivo) : 'Sin objetivo cargado',
-      estado: e.objetivo ? color(e.diff, U.ventaVsRitmo, 'mayor') : 'gris',
-      n: e.diff, u: U.ventaVsRitmo, sentido: 'mayor', unidad: '%', escala: [-30, 20]
+      sentido: 'mayor', unidad: '%', serie: serie(function (h) { return h.d.empresa.objetivo ? h.d.empresa.diff : null; }), det: detVenta
     });
-
-    // 2. Facturación vs ritmo del mes
     out.push({
-      grupo: 'Comercial', titulo: 'Facturación vs. ritmo del mes',
-      valor: e.objetivo && f.hayDato ? SP(f.diff) + '%' : null,
+      key: 'facturacionVsRitmo', grupo: 'Comercial', titulo: 'Facturación vs. ritmo del mes',
+      n: e.objetivo && f.hayDato ? f.diff : null, valor: e.objetivo && f.hayDato ? SP(f.diff) + '%' : null,
       ref: f.hayDato ? f.p + '% del objetivo con ' + d.mthPct + '% del mes · ' + M(f.total) + ' facturado + facturable' : 'Sin facturación cargada para el mes',
-      estado: e.objetivo && f.hayDato ? color(f.diff, U.facturacionVsRitmo, 'mayor') : 'gris',
-      n: f.diff, u: U.facturacionVsRitmo, sentido: 'mayor', unidad: '%', escala: [-30, 20]
+      sentido: 'mayor', unidad: '%', serie: serie(function (h) { return h.d.empresa.objetivo && h.d.facturacion.hayDato ? h.d.facturacion.diff : null; }), det: detFact
     });
-
-    // 3. Punto de equilibrio: proyección al cierre (mes en curso) o total (mes cerrado)
-    var base = d.esActual ? f.proyeccion : f.total;
-    var pePct = f.pe && base != null && f.hayDato ? base / f.pe * 100 : null;
+    var pe = vPE(d), base = d.esActual ? f.proyeccion : f.total;
     out.push({
-      grupo: 'Comercial', titulo: d.esActual ? 'Proyección vs. punto de equilibrio' : 'Facturación vs. punto de equilibrio',
-      valor: pePct != null ? nf0.format(pePct) + '%' : null,
-      ref: pePct != null ? (d.esActual ? 'Proyección ' : 'Facturado ') + M(base) + ' · PE ' + M(f.pe) : 'Falta facturación o punto de equilibrio',
-      estado: color(pePct, U.equilibrio, 'mayor'),
-      n: pePct, u: U.equilibrio, sentido: 'mayor', unidad: '%', escala: [60, 140]
+      key: 'equilibrio', grupo: 'Comercial', titulo: d.esActual ? 'Proyección vs. punto de equilibrio' : 'Facturación vs. punto de equilibrio',
+      n: pe, valor: pe != null ? nf0.format(pe) + '%' : null,
+      ref: pe != null ? (d.esActual ? 'Proyección al cierre ' : 'Facturado ') + M(base) + ' · PE ' + M(f.pe) : 'Falta facturación o punto de equilibrio',
+      sentido: 'mayor', unidad: '%', serie: serie(function (h) { return vPE(h.d); }), det: detPE
     });
 
-    // 4. Crecimiento real vs. año anterior, ajustado por inflación, en dos partes:
-    //    el mes elegido (en curso: proyección al cierre) y el acumulado a último mes cerrado.
-    var infl = nf0.format(a.inflacion * 100) + '%';
+    // Crecimiento real: mes elegido y acumulado a último mes cerrado, 2025 ajustado por inflación
     var mesIt = a.meses[+d.mes.split('-')[1] - 1];
     var rMes = mesIt && mesIt.varReal != null ? mesIt.varReal * 100 : null;
     var cerr = a.meses.filter(function (x) { return x.estado === 'cerrado' && x.anterior != null; });
     var ultCerr = cerr.length ? cerr[cerr.length - 1] : null;
     var rAcu = a.varReal != null ? a.varReal * 100 : null;
     var partes = [
-      { rotulo: mesIt.nombre + (d.esActual ? ' · mes en curso' : '') + ' vs. ' + (a.anio - 1),
-        valor: rMes != null ? SP(rMes, true) + '%' : null, estado: color(rMes, U.crecimientoReal, 'mayor'),
-        ref: rMes == null ? (mesIt.anterior == null ? 'Sin ' + mesIt.nombre.toLowerCase() + ' ' + (a.anio - 1) + ' para comparar' : 'Sin facturación del mes')
-          : (d.esActual ? 'Proyección al cierre ' + M(mesIt.proyeccion) : 'Facturado ' + M(mesIt.actual)) + ' · ' + (a.anio - 1) + ' ajustado ' + M(mesIt.ajustado) },
-      { rotulo: 'Acumulado' + (ultCerr ? ' enero a ' + ultCerr.nombre.toLowerCase() : '') + ' vs. ' + (a.anio - 1),
-        valor: rAcu != null ? SP(rAcu, true) + '%' : null, estado: color(rAcu, U.crecimientoReal, 'mayor'),
-        ref: rAcu == null ? 'Sin meses cerrados con ' + (a.anio - 1) + ' para comparar'
-          : 'Facturado ' + M(a.ytdActual) + ' · ' + (a.anio - 1) + ' ajustado ' + M(a.ytdAjustado) }
+      { rotulo: mesIt.nombre + (d.esActual ? ' · en curso' : ''), n: rMes, valor: rMes != null ? SP(rMes, true) + '%' : null,
+        ref: rMes == null ? 'Sin dato para comparar' : (d.esActual ? 'Proyección ' + M(mesIt.proyeccion) : 'Facturado ' + M(mesIt.actual)) + ' vs. ' + M(mesIt.ajustado) },
+      { rotulo: 'Acumulado' + (ultCerr ? ' ene–' + ultCerr.corto.toLowerCase() : ''), n: rAcu, valor: rAcu != null ? SP(rAcu, true) + '%' : null,
+        ref: rAcu == null ? 'Sin meses cerrados para comparar' : M(a.ytdActual) + ' vs. ' + M(a.ytdAjustado) }
     ];
-    var peor = partes.map(function (x) { return x.estado; }).sort(function (x, y) { return PESO[x] - PESO[y]; })[0];
+    var serieCre = a.meses.filter(function (x) { return x.varReal != null && x.mes <= +d.mes.split('-')[1]; }).slice(-6)
+      .map(function (x) { return { et: x.corto, v: x.varReal * 100 }; });
     out.push({
-      grupo: 'Comercial', titulo: 'Crecimiento real vs. ' + (a.anio - 1),
-      partes: partes, ancha: true, nota: 'Facturación de ' + (a.anio - 1) + ' ajustada por inflación ' + infl + '. En el mes en curso se compara la proyección al cierre.',
-      valor: null, ref: '',
-      estado: peor, u: U.crecimientoReal, sentido: 'mayor', unidad: '%'
+      key: 'crecimientoReal', grupo: 'Comercial', titulo: 'Crecimiento real vs. ' + (a.anio - 1), ancha: true,
+      partes: partes, ref: (a.anio - 1) + ' ajustado por inflación ' + nf0.format(a.inflacion * 100) + '%' + (d.esActual ? '. El mes en curso compara la proyección al cierre.' : '.'),
+      sentido: 'mayor', unidad: '%', serie: serieCre, serieTxt: 'variación real mes a mes', det: detCrec
     });
 
-    // 5. Backorder: vendido que todavía no se facturó
-    var boOk = e.total > 0 && f.hayDato;
+    var vs = d.vendedores || [], abajo = vs.filter(function (r) { return r.diff < 0; }).sort(function (x, y) { return x.diff - y.diff; });
     out.push({
-      grupo: 'Comercial', titulo: 'Backorder',
-      valor: boOk ? f.boPct + '%' : null,
-      ref: boOk ? M(Math.max(0, f.backorder)) + ' vendido sin facturar' : 'Sin ventas o facturación del mes',
-      estado: boOk ? color(f.boPct, U.backorder, 'menor') : 'gris',
-      n: f.boPct, u: U.backorder, sentido: 'menor', unidad: '%', escala: [0, 40]
+      key: 'vendedoresEnRitmo', grupo: 'Comercial', titulo: 'Vendedores en ritmo',
+      n: vRitmo(d), valor: vs.length ? vs.length - abajo.length + ' de ' + vs.length : null,
+      ref: !vs.length ? 'Sin objetivos de vendedores en el mes' : abajo.length ? 'Por debajo: ' + abajo.map(function (r) { return r.vendedor + ' (' + SP(r.diff) + '%)'; }).join(', ') : 'Todos al ritmo del mes',
+      sentido: 'mayor', unidad: '%', serie: serie(function (h) { return vRitmo(h.d); }), det: detVend
+    });
+    var bo = vBO(d);
+    out.push({
+      key: 'backorder', grupo: 'Comercial', titulo: 'Backorder',
+      n: bo, valor: bo != null ? bo + '%' : null,
+      ref: bo != null ? M(Math.max(0, f.backorder)) + ' vendido sin facturar' : 'Sin ventas o facturación del mes',
+      sentido: 'menor', unidad: '%', serie: serie(function (h) { return vBO(h.d); }), det: detBO
     });
 
-    // Vendedores en ritmo: cuántos van igual o por encima del % del mes transcurrido
-    var vs = d.vendedores || [], enRitmo = vs.filter(function (r) { return r.diff >= 0; });
-    var pRitmo = vs.length ? enRitmo.length / vs.length * 100 : null;
-    var abajo = vs.filter(function (r) { return r.diff < 0; }).sort(function (x, y) { return x.diff - y.diff; });
+    var cl = H[H.length - 1].cl, hayCl = cl && !cl.error && cl.activos;
     out.push({
-      grupo: 'Comercial', titulo: 'Vendedores en ritmo',
-      valor: vs.length ? enRitmo.length + ' de ' + vs.length : null,
-      ref: !vs.length ? 'Sin objetivos de vendedores en el mes'
-        : abajo.length ? 'Por debajo: ' + abajo.map(function (r) { return r.vendedor + ' (' + SP(r.diff) + '%)'; }).join(', ')
-        : 'Todos al ritmo del mes',
-      estado: color(pRitmo, U.vendedoresEnRitmo, 'mayor'),
-      n: pRitmo, u: U.vendedoresEnRitmo, sentido: 'mayor', unidad: '%', escala: [0, 100]
-    });
-
-    // Clientes: activos y concentración, desde la pestaña Ventas de VentasTrack
-    var cl = clientes(d);
-    var hayCl = cl && !cl.error;
-    out.push({
-      grupo: 'Clientes', titulo: 'Clientes activos',
-      valor: hayCl && cl.activos ? nf0.format(cl.activos) : null,
-      ref: !hayCl ? (cl ? cl.error : 'Sin ventas del mes')
-        : !cl.activos ? 'Sin ventas con cliente en el mes'
+      key: 'clientesActivos', grupo: 'Clientes', titulo: 'Clientes activos', cl: cl,
+      n: hayCl ? cl.varAct : null, valor: hayCl ? nf0.format(cl.activos) : null,
+      ref: !cl ? 'Sin ventas del mes' : cl.error ? cl.error : !cl.activos ? 'Sin ventas con cliente en el mes'
         : cl.varAct == null ? 'Sin ventas en ' + cl.mesAnt + ' para comparar'
         : SP(cl.varAct, true) + '% vs. ' + nf0.format(cl.activosAnt) + ' en ' + cl.mesAnt + (d.esActual ? ' a la misma fecha' : ''),
-      estado: hayCl && cl.activos ? color(cl.varAct, U.clientesActivos, 'mayor') : 'gris',
-      n: hayCl ? cl.varAct : null, u: U.clientesActivos, sentido: 'mayor', unidad: '%', escala: [-30, 20]
+      sentido: 'mayor', unidad: '%', serie: serie(function (h) { return h.cl && !h.cl.error ? h.cl.varAct : null; }), serieTxt: 'variación vs. mes anterior', det: detCliAct
     });
     out.push({
-      grupo: 'Clientes', titulo: 'Concentración de clientes',
-      valor: hayCl && cl.activos ? nf0.format(cl.conc) + '%' : null,
-      ref: hayCl && cl.activos ? 'Venta del 20% de mejores clientes (' + cl.top + ' de ' + cl.activos + ') · el mayor cliente, ' + nf0.format(cl.mayor) + '%'
-        : (cl && cl.error) || 'Sin ventas con cliente en el mes',
-      estado: hayCl && cl.activos ? color(cl.conc, U.concentracion, 'menor') : 'gris',
-      n: hayCl ? cl.conc : null, u: U.concentracion, sentido: 'menor', unidad: '%', escala: [20, 100]
+      key: 'concentracion', grupo: 'Clientes', titulo: 'Concentración de clientes', cl: cl,
+      n: hayCl ? cl.conc : null, valor: hayCl ? nf0.format(cl.conc) + '%' : null,
+      ref: hayCl ? 'Venta del 20% de mejores clientes (' + cl.top + ' de ' + cl.activos + ') · el mayor cliente, ' + nf0.format(cl.mayor) + '%' : (cl && cl.error) || 'Sin ventas con cliente en el mes',
+      sentido: 'menor', unidad: '%', serie: serie(function (h) { return h.cl && !h.cl.error && h.cl.activos ? h.cl.conc : null; }), det: detConc
     });
 
-    // 6. Deuda vencida: % de la deuda en la calle con 30 días o más, separada por tramo.
-    //    El tramo de menos de 30 días no se considera vencido.
-    // Vencido = tramos de 30 días en adelante ("+30", "+40", "+50", "30 a 45", "más de 60"...).
-    // No vencido = "menos de 30", "<30", "0 a 30", "a vencer", "hasta 30"...
-    function vencido(label) {
-      var n = norm(label);
-      if (/menos|hasta|vencer|no venc|corriente/.test(n) || /^\s*</.test(label)) return false;
-      var num = n.match(/\d+/);
-      if (!num) return false;
-      if (/^0\b|^0 /.test(n) || +num[0] < 30) return false;
-      return true;
-    }
-    var tv = v ? v.tramos.filter(function (t) { return vencido(t.label); }) : [];
-    var montoV = tv.reduce(function (s, t) { return s + t.valor; }, 0);
-    var pV = v && v.total ? montoV / v.total * 100 : null;
+    var v = CV.length ? CV[CV.length - 1] : null;
     out.push({
-      grupo: 'Financiero', titulo: 'Deuda en la calle vencida', ancha: true,
-      valor: pV != null ? nf0.format(pV) + '%' : null,
-      ref: pV != null ? M(montoV) + ' vencido de ' + M(v.total) + ' en la calle · menos de 30 días no se considera vencido · corte ' + F(v.fecha) : 'Sin datos de vencimientos',
-      tramos: pV != null ? tv.map(function (t) { return { label: t.label, pct: t.valor / v.total * 100, valor: t.valor }; }) : null,
-      estado: color(pV, U.deudaVencida, 'menor'),
-      n: pV, u: U.deudaVencida, sentido: 'menor', unidad: '%', escala: [0, 60]
+      key: 'deudaVencida', grupo: 'Financiero', titulo: 'Deuda en la calle vencida', ancha: true, corte: v,
+      n: v ? v.pct : null, valor: v && v.pct != null ? nf0.format(v.pct) + '%' : null,
+      ref: v ? M(v.vencido) + ' vencido de ' + M(v.total) + ' · menos de 30 días no se considera vencido · corte ' + F(v.fecha) : 'Sin datos de vencimientos',
+      tramos: v ? v.tramos.filter(function (t) { return t.venc; }) : null,
+      sentido: 'menor', unidad: '%', serie: CV.slice(-6).map(function (c) { return { et: F(c.fecha), v: c.pct }; }), serieTxt: 'últimos cortes', det: detDeuda, CV: CV
     });
-
-    // 7. Balance ácido como índice: (caja + cheques + cuentas a cobrar) / (proveedores + ch. propio)
+    var b = CB.length ? CB[CB.length - 1] : null;
     out.push({
-      grupo: 'Financiero', titulo: 'Liquidez ácida',
-      valor: b && b.acidoIdx != null ? X(b.acidoIdx) : null,
-      ref: b ? 'Balance ácido ' + M(b.acido) + ' · corte ' + F(b.fecha) : 'Sin datos de balance',
-      estado: color(b && b.acidoIdx, U.acido, 'mayor'),
-      n: b && b.acidoIdx, u: U.acido, sentido: 'mayor', unidad: 'x', escala: [0.5, 2]
+      key: 'acido', grupo: 'Financiero', titulo: 'Liquidez ácida', corte: b,
+      n: b ? b.acido : null, valor: b && b.acido != null ? X(b.acido) : null,
+      ref: b ? 'Activo líquido ' + M(b.acA) + ' · pasivo inmediato ' + M(b.acP) + ' · corte ' + F(b.fecha) : 'Sin datos de balance',
+      sentido: 'mayor', unidad: 'x', serie: CB.slice(-6).map(function (c) { return { et: F(c.fecha), v: c.acido }; }), serieTxt: 'últimos cortes', det: detAcido
     });
 
-    // 8. Solvencia: activo total / pasivo total
-    out.push({
-      grupo: 'Financiero', titulo: 'Solvencia',
-      valor: b && b.balanceIdx != null ? X(b.balanceIdx) : null,
-      ref: b ? 'Activo ' + M(b.totalActivo) + ' · pasivo ' + M(b.totalPasivo) : 'Sin datos de balance',
-      estado: color(b && b.balanceIdx, U.solvencia, 'mayor'),
-      n: b && b.balanceIdx, u: U.solvencia, sentido: 'mayor', unidad: 'x', escala: [0.5, 3]
+    out.forEach(function (it, i) {
+      it.orden = i; it.u = U[it.key]; it.regla = regla(it.u, it.sentido, it.unidad);
+      if (it.partes) {
+        it.partes.forEach(function (x) { x.estado = color(x.n, it.u, it.sentido); });
+        it.estado = it.partes.map(function (x) { return x.estado; }).sort(function (x, y) { return PESO[x] - PESO[y]; })[0];
+      } else it.estado = color(it.n, it.u, it.sentido);
+      it.extra = EXTRA[it.key] || {};
     });
-
-    out.forEach(function (it, i) { it.orden = i; it.regla = regla(it.u, it.sentido, it.unidad); });
     return out;
   }
 
-  // ---------- Piezas ----------
-  var NOMBRE = { rojo: 'Crítico', amarillo: 'Alerta', verde: 'En orden', gris: 'Sin dato' };
-  var ICONO = { rojo: '■', amarillo: '▲', verde: '●', gris: '○' };
-  var PESO = { rojo: 0, amarillo: 1, verde: 2, gris: 3 };
+  // ---------- Piezas gráficas ----------
+  var COL = { rojo: '#FF5C5C', amarillo: '#FFB547', verde: '#C6F432', gris: '#5B6675' };
 
-  function zonas(it) {
-    if (!it.u || it.estado === 'gris') return '';
-    var lo = it.escala[0], hi = it.escala[1];
-    function pos(x) { return Math.max(0, Math.min(100, (x - lo) / (hi - lo) * 100)); }
-    var a = pos(it.u[0]), b = pos(it.u[1]);
-    var cols = it.sentido === 'menor' ? ['verde', 'amarillo', 'rojo'] : ['rojo', 'amarillo', 'verde'];
-    var m = pos(it.n);
-    return '<div class="zonas" aria-hidden="true">' +
-      '<i class="z-' + cols[0] + '" style="width:' + a + '%"></i>' +
-      '<i class="z-' + cols[1] + '" style="width:' + (b - a) + '%"></i>' +
-      '<i class="z-' + cols[2] + '" style="width:' + (100 - b) + '%"></i>' +
-      '<b style="left:' + m + '%"></b></div>';
+  function tendencia(it) {
+    var pts = (it.serie || []).filter(function (p) { return p.v != null && isFinite(p.v); });
+    if (pts.length < 2) return '';
+    var w = 84, h = 28, vals = pts.map(function (p) { return p.v; });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), r = hi - lo || 1;
+    var xy = pts.map(function (p, i) { return [2 + i * (w - 6) / (pts.length - 1), h - 4 - (p.v - lo) / r * (h - 8)]; });
+    var path = xy.map(function (q, i) { return (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' ');
+    var last = xy[xy.length - 1];
+    var dlt = vals[vals.length - 1] - vals[vals.length - 2];
+    var tol = it.unidad === 'x' ? 0.01 : 0.5;
+    var txt = Math.abs(dlt) < tol ? 'estable' : (it.sentido === 'mayor' ? dlt > 0 : dlt < 0) ? 'mejorando' : 'empeorando';
+    var cls = txt === 'mejorando' ? 'mejora' : txt === 'empeorando' ? 'empeora' : '';
+    var desde = it.serieTxt || 'últimos ' + pts.length + ' meses';
+    return '<div class="tend" title="Tendencia: ' + esc(desde) + ' (' + esc(pts.map(function (p) { return p.et; }).join(', ')) + ')">' +
+      '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true">' +
+      '<path d="' + path + '" fill="none" stroke="#9AA7B5" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity=".6"/>' +
+      '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="3" fill="' + COL[it.estado] + '"/></svg>' +
+      '<span class="tend-txt ' + cls + '">' + (cls === 'mejora' ? '↗ ' : cls === 'empeora' ? '↘ ' : '→ ') + txt + '</span></div>';
   }
 
-  function parte(x) {
-    return '<div class="parte s-' + x.estado + '"><div class="parte-cab"><span class="foco"></span>' + esc(x.rotulo) + '</div>' +
-      '<div class="parte-val">' + (x.valor != null ? esc(x.valor) : '—') + '</div>' +
-      '<p class="luz-ref">' + esc(x.ref) + '</p></div>';
+  function barras(items) {
+    return '<div class="filas">' + items.map(function (x) {
+      return '<div class="fila-v s-' + (x.e || 'gris') + '"><span class="nom">' + esc(x.n) + '</span>' +
+        '<div class="barra"><div class="r" style="width:' + Math.max(0, Math.min(100, x.p)) + '%"></div>' +
+        (x.m != null ? '<div class="m" style="left:' + Math.min(100, x.m) + '%"></div>' : '') + '</div>' +
+        '<span class="num">' + esc(x.t) + '</span></div>';
+    }).join('') + '</div>';
+  }
+  function nota(t) { return '<p class="det-nota">' + esc(t) + '</p>'; }
+  function titDet(t) { return '<span class="det-tit">' + esc(t) + '</span>'; }
+
+  // ---------- Detalles ----------
+  function detVenta(it, d) {
+    var e = d.empresa, act = {};
+    (d.vendedores || []).forEach(function (r) { act[r.vendedor] = 1; });
+    var sem = {}, orden = [];
+    ventasPlanas().filas.forEach(function (r) {
+      if (r.f.mes !== d.mes || !act[r.vend]) return;
+      var dt = new Date(r.f.y, r.f.m - 1, r.f.d), lun = new Date(dt); lun.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+      var k = lun.getFullYear() * 10000 + (lun.getMonth() + 1) * 100 + lun.getDate();
+      if (!sem[k]) { sem[k] = { lun: lun, imp: 0 }; orden.push(k); }
+      sem[k].imp += r.imp;
+    });
+    orden.sort();
+    var max = Math.max.apply(null, orden.map(function (k) { return sem[k].imp; }).concat([1]));
+    return titDet('Avance del mes') + barras([{ n: 'Venta', p: e.p, m: d.mthPct, e: it.estado, t: e.p + '% · ' + M(e.total) + ' de ' + M(e.objetivo) }]) +
+      nota('La línea blanca marca el ' + d.mthPct + '% del mes transcurrido.' + (e.gap > 0 && d.restantes > 0 ? ' Para llegar al objetivo hacen falta ' + M(e.dailyNeed) + ' por día hábil en los ' + d.restantes + ' que quedan.' : '')) +
+      (orden.length ? titDet('Venta por semana') + barras(orden.map(function (k) {
+        var s = sem[k], ini = s.lun.getMonth() + 1 === +d.mes.split('-')[1] ? s.lun.getDate() : 1;
+        return { n: 'Semana del ' + F({ d: ini, m: +d.mes.split('-')[1] }), p: s.imp / max * 100, e: 'gris', t: M(s.imp) };
+      })) : '');
+  }
+  function detFact(it, d) {
+    var f = d.facturacion, e = d.empresa, obj = e.objetivo || 1;
+    return titDet('Facturación del mes') + barras([
+      { n: 'Facturado', p: f.facturado / obj * 100, m: d.mthPct, e: it.estado, t: M(f.facturado) },
+      { n: 'Facturable', p: f.facturable / obj * 100, e: 'amarillo', t: M(f.facturable) },
+      { n: 'Total', p: f.p, m: d.mthPct, e: it.estado, t: f.p + '% · ' + M(f.total) + ' de ' + M(e.objetivo) }]) +
+      nota('La línea blanca marca el ' + d.mthPct + '% del mes transcurrido.' + (f.gap > 0 && d.restantes > 0 ? ' Faltan ' + M(f.gap) + ' para el objetivo: ' + M(f.dailyNeed) + ' por día hábil.' : '') +
+        (d.esActual && f.proyeccion != null ? ' Proyección al cierre: ' + M(f.proyeccion) + '.' : ''));
+  }
+  function detPE(it, d, H) {
+    var filas = H.map(function (h) {
+      var v = vPE(h.d), mm = +h.mes.split('-')[1];
+      return v == null ? null : { n: C.MESES[mm - 1] + (h.d.esActual ? ' (proy.)' : ''), p: v / 1.5, m: 100 / 1.5, e: color(v, it.u, 'mayor'), t: nf0.format(v) + '% del PE' };
+    }).filter(Boolean);
+    return titDet('Últimos meses vs. punto de equilibrio') + barras(filas) +
+      nota('La línea blanca marca el 100% del punto de equilibrio. En el mes en curso se usa la proyección al cierre.');
+  }
+  function detVend(it, d) {
+    var vs = (d.vendedores || []).slice().sort(function (x, y) { return y.p - x.p; });
+    return titDet('Avance de cada vendedor') + barras(vs.map(function (r) {
+      return { n: r.vendedor, p: r.p, m: d.mthPct, e: r.diff >= 0 ? 'verde' : r.diff >= -10 ? 'amarillo' : 'rojo', t: r.p + '% · ' + M(r.total) + ' de ' + M(r.goal) };
+    })) + nota('La línea blanca marca el ' + d.mthPct + '% del mes transcurrido. En verde, los que van al ritmo o por encima.');
+  }
+  function detBO(it, d) {
+    var e = d.empresa, f = d.facturacion, tot = e.total || 1;
+    return titDet('Composición de lo vendido en el mes') + barras([
+      { n: 'Facturado', p: f.facturado / tot * 100, e: 'verde', t: M(f.facturado) },
+      { n: 'Facturable', p: f.facturable / tot * 100, e: 'amarillo', t: M(f.facturable) },
+      { n: 'Backorder', p: Math.max(0, f.backorder) / tot * 100, e: 'rojo', t: M(Math.max(0, f.backorder)) }]) +
+      nota('Vendido en el mes: ' + M(e.total) + '. Backorder = vendido − (facturado + facturable).');
+  }
+  function detCrec(it, d) {
+    var a = d.anual, W = 1100, H = 240, L = 54, B = 26, gw = (W - L - 8) / 12;
+    var paso = (function (x) { var p = Math.pow(10, Math.floor(Math.log10(x))), r = x / p; return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 2.5 ? 2.5 : r <= 5 ? 5 : 10) * p; })(Math.max(a.max || 1, 1) / 4);
+    var max = Math.ceil(Math.max(a.max || 1, 1) / paso) * paso, ticks = [];
+    for (var t = 0; t <= max + 1; t += paso) ticks.push(t);
+    function y(v) { return H - B - v / max * (H - B - 12); }
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Facturación mensual ' + (a.anio - 1) + ', ajustado y ' + a.anio + '">';
+    ticks.forEach(function (v) {
+      s += '<line x1="' + L + '" x2="' + (W - 8) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#242C38"/>' +
+        '<text x="' + (L - 8) + '" y="' + (y(v) + 4) + '" fill="#9AA7B5" font-size="12" text-anchor="end" font-family="DM Mono, monospace">' + (v ? '$' + nf0.format(v / 1e6) + 'M' : '0') + '</text>';
+    });
+    a.meses.forEach(function (mi, i) {
+      var x0 = L + i * gw + gw * 0.12, bw = gw * 0.24;
+      if (mi.anterior != null) s += '<rect x="' + x0 + '" y="' + y(mi.anterior) + '" width="' + bw + '" height="' + (y(0) - y(mi.anterior)) + '" fill="#3B4757"/>';
+      if (mi.ajustado != null) s += '<rect x="' + (x0 + bw + 2) + '" y="' + y(mi.ajustado) + '" width="' + bw + '" height="' + (y(0) - y(mi.ajustado)) + '" fill="#FFB547" opacity=".75"/>';
+      var act = mi.estado === 'encurso' ? mi.proyeccion : mi.actual;
+      if (act != null) {
+        var enc = mi.estado === 'encurso';
+        s += '<rect x="' + (x0 + 2 * bw + 4) + '" y="' + y(act) + '" width="' + bw + '" height="' + (y(0) - y(act)) + '" fill="' + (enc ? 'none' : '#C6F432') + '"' + (enc ? ' stroke="#C6F432" stroke-dasharray="4 3" stroke-width="1.5"' : '') + '/>';
+        if (enc && mi.actual != null) s += '<rect x="' + (x0 + 2 * bw + 4) + '" y="' + y(mi.actual) + '" width="' + bw + '" height="' + (y(0) - y(mi.actual)) + '" fill="#C6F432" opacity=".45"/>';
+      }
+      s += '<text x="' + (L + i * gw + gw / 2) + '" y="' + (H - 8) + '" fill="#9AA7B5" font-size="12" text-anchor="middle" font-family="DM Mono, monospace">' + mi.corto + '</text>';
+    });
+    s += '</svg>';
+    return titDet('Facturación mensual ' + (a.anio - 1) + ' vs. ' + a.anio) + '<div class="graf-wrap">' + s + '</div>' +
+      '<div class="leyenda"><span><i style="background:#3B4757"></i>' + (a.anio - 1) + '</span><span><i style="background:#FFB547;opacity:.75"></i>' + (a.anio - 1) + ' ajustado ' + nf0.format(a.inflacion * 100) + '%</span>' +
+      '<span><i style="background:#C6F432"></i>' + a.anio + '</span><span><i style="border:1.5px dashed #C6F432"></i>Mes en curso (proyección)</span></div>' +
+      '<div class="infl"><label for="inp-infl">Inflación para ajustar ' + (a.anio - 1) + ' (%)</label><input id="inp-infl" type="number" min="0" step="1" inputmode="decimal" value="' + nf0.format(a.inflacion * 100).replace(/\./g, '') + '"></div>';
+  }
+  function detCliAct(it) {
+    var cl = it.cl;
+    if (!cl || cl.error || !cl.activos) return nota('Sin datos de clientes para el mes.');
+    var dj = cl.dejaron.slice(0, 5);
+    return '<div class="tabla"><div><span class="t-cab">Movimiento vs. ' + esc(cl.mesAnt) + '</span>' +
+      '<div class="t-r"><span>Siguen comprando</span><span>' + cl.siguen + '</span></div>' +
+      '<div class="t-r"><span>Nuevos o que volvieron</span><span>' + cl.nuevos + '</span></div>' +
+      '<div class="t-r"><span>Compraron en ' + esc(cl.mesAnt) + ' y todavía no este mes</span><span>' + cl.dejaron.length + '</span></div></div>' +
+      '<div><span class="t-cab">Los que más compraban y todavía no compraron</span>' +
+      (dj.length ? dj.map(function (x) { return '<div class="t-r"><span>' + esc(x.nom) + '</span><span>' + M(x.imp) + ' en ' + esc(cl.mesAnt.slice(0, 3)) + '.</span></div>'; }).join('') : '<div class="t-r"><span>Ninguno</span><span></span></div>') +
+      '</div></div>';
+  }
+  function detConc(it) {
+    var cl = it.cl;
+    if (!cl || cl.error || !cl.activos) return nota('Sin datos de clientes para el mes.');
+    var top = cl.orden.slice(0, 5), max = top.length ? top[0].imp : 1;
+    return titDet('Mayores clientes del mes') + barras(top.map(function (x) {
+      return { n: x.nom, p: x.imp / max * 100, e: 'gris', t: nf1.format(x.imp / cl.total * 100) + '% · ' + M(x.imp) };
+    }));
+  }
+  function detDeuda(it) {
+    var v = it.corte;
+    if (!v) return nota('Sin datos de vencimientos.');
+    var cols = ['#E8C547', '#FF9A4D', '#FF5C5C'];
+    var html = titDet('Apertura por tramo') + '<div class="tramos-v">' + it.tramos.map(function (t, k) {
+      return '<div class="tv" style="border-top-color:' + cols[Math.min(k, 2)] + '"><span class="tv-rot">' + esc(t.label) + '</span>' +
+        '<span class="tv-val">' + (v.total ? nf0.format(t.valor / v.total * 100) : '—') + '%</span><span class="tv-m">' + M(t.valor) + '</span></div>';
+    }).join('') + '</div>';
+    var hist = it.CV.slice(-6);
+    if (hist.length > 1) html += titDet('Evolución en los últimos cortes') + barras(hist.map(function (c) {
+      return { n: 'Corte ' + F(c.fecha), p: (c.pct || 0) / 60 * 100, e: color(c.pct, it.u, 'menor'), t: nf0.format(c.pct) + '% · ' + M(c.vencido) };
+    }));
+    return html;
+  }
+  function detAcido(it) {
+    var b = it.corte;
+    if (!b) return nota('Sin datos de balance.');
+    function fila(k) { var r = C.RUBROS.filter(function (x) { return x.key === k; })[0]; return '<div class="t-r"><span>' + esc(r.label) + '</span><span>' + M(b.vals[k]) + '</span></div>'; }
+    return '<div class="tabla"><div><span class="t-cab">Activo líquido</span>' + fila('caja') + fila('cheques') + fila('cobrar') +
+      '<div class="t-r t-tot"><span>Total</span><span>' + M(b.acA) + '</span></div></div>' +
+      '<div><span class="t-cab">Pasivo inmediato</span>' + fila('proveedores') + fila('chpropio') +
+      '<div class="t-r t-tot"><span>Total</span><span>' + M(b.acP) + '</span></div></div></div>' +
+      nota('Liquidez ácida = activo líquido ÷ pasivo inmediato. Corte ' + F(b.fecha) + '.');
   }
 
-  function tarjeta(it) {
+  // ---------- Tarjeta ----------
+  function tarjeta(it, d, H) {
+    var abierta = !!estado.abiertas[it.key];
+    var cuerpo;
     if (it.partes) {
-      var usados = it.partes.map(function (x) { return x.estado; });
-      return '<article class="luz ancha s-' + it.estado + '">' +
-        '<div class="luz-cab"><h3>' + esc(it.titulo) + '</h3>' +
-        '<span class="luz-estado"><span class="foco"></span>' + NOMBRE[it.estado] + '</span></div>' +
-        '<div class="partes">' + it.partes.map(parte).join('') + '</div>' +
-        (it.nota ? '<p class="luz-ref">' + esc(it.nota) + '</p>' : '') +
-        (it.regla && it.estado !== 'gris' ? '<ul class="leyenda-luz" aria-label="Rangos de cada color">' + it.regla.map(function (r) {
-          return '<li class="s-' + r.estado + (usados.indexOf(r.estado) > -1 ? ' actual' : '') + '"><span class="foco"></span><span>' + esc(r.texto) + '</span></li>';
-        }).join('') + '</ul>' : '') +
-        '</article>';
+      cuerpo = '<div class="partes">' + it.partes.map(function (x) {
+        return '<div class="parte s-' + x.estado + '"><div class="parte-cab"><span class="foco"></span>' + esc(x.rotulo) + '</div>' +
+          '<div class="parte-val">' + (x.valor != null ? esc(x.valor) : '—') + '</div><p class="luz-ref">' + esc(x.ref) + '</p></div>';
+      }).join('') + '</div><div class="val-fila"><p class="luz-ref">' + esc(it.ref) + '</p>' + tendencia(it) + '</div>';
+    } else {
+      cuerpo = '<div class="val-fila"><span class="luz-val">' + (it.valor != null ? esc(it.valor) : '—') + '</span>' + tendencia(it) + '</div>' +
+        '<p class="luz-ref">' + esc(it.ref) + '</p>' +
+        (it.tramos && it.tramos.length && !abierta ? '<div class="tramos-mini">' + it.tramos.map(function (t) {
+          return '<span>' + esc(t.label) + ' <b>' + (it.corte.total ? nf0.format(t.valor / it.corte.total * 100) : '—') + '%</b></span>';
+        }).join('') + '</div>' : '');
     }
-    return '<article class="luz' + (it.ancha ? ' ancha' : '') + ' s-' + it.estado + '">' +
-      '<div class="luz-cab"><h3>' + esc(it.titulo) + '</h3>' +
-      '<span class="luz-estado"><span class="foco"></span>' + NOMBRE[it.estado] + '</span></div>' +
-      '<div class="luz-val">' + (it.valor != null ? esc(it.valor) : '—') + '</div>' +
-      '<p class="luz-ref">' + esc(it.ref) + '</p>' +
-      (it.tramos ? '<div class="tramos-v">' + it.tramos.map(function (t, k) {
-        return '<div class="tv tv' + Math.min(k, 2) + '"><span class="tv-rot">' + esc(t.label) + '</span>' +
-          '<span class="tv-val">' + nf0.format(t.pct) + '%</span><span class="tv-m">' + M(t.valor) + '</span></div>';
-      }).join('') + '</div>' : '') +
-      zonas(it) +
-      (it.regla && it.estado !== 'gris' ? '<ul class="leyenda-luz" aria-label="Rangos de cada color">' + it.regla.map(function (r) {
-        return '<li class="s-' + r.estado + (r.estado === it.estado ? ' actual' : '') + '"><span class="foco"></span><span>' + esc(r.texto) + '</span></li>';
-      }).join('') + '</ul>' : '') +
-      '</article>';
+    var usados = it.partes ? it.partes.map(function (x) { return x.estado; }) : [it.estado];
+    var ley = it.regla && it.estado !== 'gris' ? '<ul class="leyenda-luz" aria-label="Rangos de cada color">' + it.regla.map(function (r) {
+      return '<li class="s-' + r.estado + (usados.indexOf(r.estado) > -1 ? ' actual' : '') + '"><span class="foco"></span><span>' + esc(r.texto) + '</span></li>';
+    }).join('') + '</ul>' : '';
+    var ex = it.extra;
+    var resp = ex.resp || ex.com ? '<div class="resp">' + (ex.resp ? '<span class="resp-quien">Responsable: <b>' + esc(ex.resp) + '</b></span>' : '') +
+      (ex.com ? '<p class="coment">' + esc(ex.com) + '</p>' : '') + '</div>' : '';
+    var det = '';
+    if (abierta) { try { det = it.det(it, d, H); } catch (err) { det = nota('No se pudo armar el detalle: ' + err.message); } }
+    return '<article class="luz' + (it.ancha ? ' ancha' : '') + (abierta ? ' abierta' : '') + ' s-' + it.estado + '" data-key="' + it.key + '">' +
+      '<div class="luz-btn" role="button" tabindex="0" aria-expanded="' + abierta + '">' +
+      '<div class="luz-cab"><h3>' + esc(it.titulo) + '</h3><span class="luz-estado"><span class="foco"></span>' + NOMBRE[it.estado] + '</span></div>' +
+      cuerpo + ley + resp +
+      '<span class="abrir">' + (abierta ? 'Cerrar detalle ▴' : 'Ver detalle ▾') + '</span></div>' +
+      (abierta ? '<div class="detalle">' + det + '</div>' : '') + '</article>';
   }
 
-  // Un bloque por grupo, en este orden; dentro de cada uno, los rojos primero.
-  var GRUPOS = ['Comercial', 'Clientes', 'Financiero'];
-  function bloques(lista) {
-    return GRUPOS.map(function (g) {
-      var items = lista.filter(function (it) { return it.grupo === g; });
+  // ---------- Bloques ----------
+  var GRUPOS = [
+    { g: 'Comercial', p: '¿Llegamos al mes?' },
+    { g: 'Clientes', p: '¿Cómo está la cartera?' },
+    { g: 'Financiero', p: '¿Nos están pagando?' }
+  ];
+  function bloques(lista, d, H) {
+    return GRUPOS.map(function (G) {
+      var items = lista.filter(function (it) { return it.grupo === G.g; });
       if (!items.length) return '';
       var cnt = { rojo: 0, amarillo: 0, verde: 0, gris: 0 };
       items.forEach(function (it) { cnt[it.estado]++; });
       var marcas = ['rojo', 'amarillo', 'verde', 'gris'].filter(function (s) { return cnt[s]; }).map(function (s) {
         return '<span class="s-' + s + '"><span class="foco"></span>' + cnt[s] + ' ' + NOMBRE[s].toLowerCase() + '</span>';
       }).join('');
-      return '<section class="bloque" aria-label="' + g + '"><div class="bloque-cab"><h2>' + g + '</h2><div class="bloque-cuenta">' + marcas + '</div></div>' +
-        '<div class="grilla">' + items.map(tarjeta).join('') + '</div></section>';
+      return '<section class="bloque" aria-label="' + G.g + '"><div class="bloque-cab"><h2>' + G.g + '<span class="pregunta">' + G.p + '</span></h2><div class="bloque-cuenta">' + marcas + '</div></div>' +
+        '<div class="grilla">' + items.map(function (it) { return tarjeta(it, d, H); }).join('') + '</div></section>';
     }).join('');
   }
 
-  function resumen(lista, d) {
+  // ---------- Titular ----------
+  function titular(lista, d, CV) {
     var cnt = { rojo: 0, amarillo: 0, verde: 0, gris: 0 };
     lista.forEach(function (it) { cnt[it.estado]++; });
     var general = cnt.rojo ? 'rojo' : cnt.amarillo ? 'amarillo' : cnt.verde ? 'verde' : 'gris';
-    var titular = {
-      rojo: cnt.rojo === 1 ? 'Hay 1 indicador en rojo' : 'Hay ' + cnt.rojo + ' indicadores en rojo',
-      amarillo: 'Sin rojos, ' + cnt.amarillo + (cnt.amarillo === 1 ? ' indicador' : ' indicadores') + ' en alerta',
-      verde: 'Todo en orden',
-      gris: 'Todavía no hay datos para evaluar'
+    var tit = {
+      rojo: cnt.rojo === 1 ? '1 indicador en rojo' : cnt.rojo + ' indicadores en rojo',
+      amarillo: 'Sin rojos · ' + cnt.amarillo + (cnt.amarillo === 1 ? ' en alerta' : ' en alerta'),
+      verde: 'Todo en orden', gris: 'Todavía no hay datos para evaluar'
     }[general];
-    var foco = lista.filter(function (it) { return it.estado === 'rojo'; }).map(function (it) { return it.titulo; });
-    function cuenta(s) {
-      return '<div class="cuenta s-' + s + '"><span class="foco"></span><span class="num">' + cnt[s] + '</span><span>' + NOMBRE[s] + '</span></div>';
-    }
-    return '<section class="resumen s-' + general + '" aria-label="Estado general">' +
-      '<div class="semaforo" aria-hidden="true"><i class="l-r"></i><i class="l-a"></i><i class="l-v"></i></div>' +
-      '<div class="res-txt"><span class="sup">Estado general · ' + esc(d.mesNombre) + '</span>' +
-      '<h2>' + titular + '</h2>' +
-      (foco.length ? '<p>Mirar primero: ' + esc(foco.join(' · ')) + '</p>' : '<p>' + (d.esActual ? 'Día hábil ' + d.transcurridos + ' de ' + d.totalDias + ' (' + d.mthPct + '% del mes).' : 'Mes cerrado.') + '</p>') +
-      '</div><div class="cuentas">' + cuenta('rojo') + cuenta('amarillo') + cuenta('verde') + (cnt.gris ? cuenta('gris') : '') + '</div></section>';
+    var foco = lista.filter(function (it) { return it.estado === 'rojo'; }).map(function (it) { return it.titulo.toLowerCase(); });
+    var luz = { rojo: 'on-r', amarillo: 'on-a', verde: 'on-v' }[general] || '';
+    var html = '<section class="titular" aria-label="Resumen"><div class="estado s-' + general + '">' +
+      '<div class="semaforo ' + luz + '" aria-hidden="true"><i class="l-r"></i><i class="l-a"></i><i class="l-v"></i></div>' +
+      '<div class="estado-txt"><span class="preg">Estado general · ' + esc(d.mesNombre) + '</span><h2>' + tit + '</h2>' +
+      '<p>' + (foco.length ? 'Mirar primero: ' + esc(foco.join(', ')) + '.' : d.esActual ? 'Día hábil ' + d.transcurridos + ' de ' + d.totalDias + ' (' + d.mthPct + '% del mes).' : 'Mes cerrado.') + '</p>' +
+      '<div class="cuentas">' + ['rojo', 'amarillo', 'verde', 'gris'].filter(function (s) { return cnt[s] || s !== 'gris'; }).map(function (s) {
+        return '<span class="s-' + s + '"><span class="foco"></span>' + cnt[s] + ' ' + NOMBRE[s].toLowerCase() + '</span>'; }).join('') + '</div></div></div>';
+
+    var pe = lista.filter(function (it) { return it.key === 'equilibrio'; })[0];
+    var f = d.facturacion, base = d.esActual ? f.proyeccion : f.total;
+    html += '<div class="preg-box s-' + pe.estado + '"><span class="preg">¿Llegamos al mes?</span>' +
+      '<span class="big">' + (pe.valor || '—') + '</span>' +
+      '<span class="tit-sub">' + (pe.n != null ? 'del punto de equilibrio con ' + (d.esActual ? 'la proyección al cierre' : 'lo facturado') + ' (' + M(base) + ' de ' + M(f.pe) + ')' : esc(pe.ref)) + '</span>' +
+      (pe.n != null ? '<span class="tit-pie"><span class="foco"></span>' + (base >= f.pe ? 'Supera el equilibrio por ' + M(base - f.pe) : 'Faltan ' + M(f.pe - base)) + '</span>' : '') + '</div>';
+
+    var dv = lista.filter(function (it) { return it.key === 'deudaVencida'; })[0];
+    var prev = CV.length > 1 ? CV[CV.length - 2] : null, ult = CV.length ? CV[CV.length - 1] : null;
+    var cambio = prev && ult && prev.pct != null && ult.pct != null ? (Math.round(ult.pct) === Math.round(prev.pct) ? 'igual que el corte anterior' :
+      (ult.pct > prev.pct ? 'subió' : 'bajó') + ' de ' + nf0.format(prev.pct) + '% a ' + nf0.format(ult.pct) + '% desde el ' + F(prev.fecha)) : NOMBRE[dv.estado];
+    html += '<div class="preg-box s-' + dv.estado + '"><span class="preg">¿Nos están pagando?</span>' +
+      '<span class="big">' + (dv.valor || '—') + '</span>' +
+      '<span class="tit-sub">' + (ult ? 'de la deuda en la calle está vencida (' + M(ult.vencido) + ' de ' + M(ult.total) + ')' : esc(dv.ref)) + '</span>' +
+      (ult ? '<span class="tit-pie"><span class="foco"></span>' + esc(cambio) + '</span>' : '') + '</div></section>';
+    return html;
   }
 
+  // ---------- Qué cambió esta semana ----------
+  /* Compara los dos últimos cortes de BALANCE y DEUDA_VENCIMIENTOS, y la venta de los últimos 7 días
+     contra los 7 anteriores. Muestra primero lo que cambió de color y después los mayores movimientos. */
+  function cambios(CB, CV) {
+    var cand = [], b1 = CB[CB.length - 1], b0 = CB[CB.length - 2], v1 = CV[CV.length - 1], v0 = CV[CV.length - 2];
+    function col(n, key, s) { return color(n, U[key], s); }
+    function dir(bueno) { return bueno ? 'verde' : 'rojo'; }
+    var CN = { verde: 'verde', amarillo: 'amarillo', rojo: 'rojo', gris: 'sin dato' };
+    if (v1 && v0 && v1.pct != null && v0.pct != null) {
+      var dp = v1.pct - v0.pct, c0 = col(v0.pct, 'deudaVencida', 'menor'), c1 = col(v1.pct, 'deudaVencida', 'menor');
+      cand.push({ score: (c0 !== c1 ? 1000 : 0) + Math.abs(dp) * 4, min: Math.abs(dp) >= 1 || c0 !== c1,
+        est: c0 !== c1 ? c1 : dir(dp < 0), fl: dp > 0 ? '▲' : '▼',
+        t: c0 !== c1 ? 'Deuda vencida pasó de ' + CN[c0] + ' a ' + CN[c1] : 'Deuda vencida ' + (dp > 0 ? 'subió' : 'bajó') + ' de ' + nf0.format(v0.pct) + '% a ' + nf0.format(v1.pct) + '%',
+        s: c0 !== c1 ? 'De ' + nf0.format(v0.pct) + '% a ' + nf0.format(v1.pct) + '%' : 'Vencido ' + M(v0.vencido) + ' → ' + M(v1.vencido) });
+      v1.tramos.forEach(function (t, k) {
+        var t0 = v0.tramos[k];
+        if (!t.venc || !t0 || !t0.valor) return;
+        var r = (t.valor - t0.valor) / t0.valor * 100;
+        cand.push({ score: Math.abs(r) * 0.6, min: Math.abs(r) >= 15, est: dir(r < 0), fl: r > 0 ? '▲' : '▼',
+          t: 'Tramo ' + t.label + ' ' + (r > 0 ? 'creció' : 'bajó') + ' ' + M(Math.abs(t.valor - t0.valor)), s: M(t0.valor) + ' → ' + M(t.valor) });
+      });
+    }
+    if (b1 && b0) {
+      if (b1.acido != null && b0.acido != null) {
+        var a0 = col(b0.acido, 'acido', 'mayor'), a1 = col(b1.acido, 'acido', 'mayor'), da = (b1.acido - b0.acido) / b0.acido * 100;
+        cand.push({ score: (a0 !== a1 ? 1000 : 0) + Math.abs(da), min: Math.abs(da) >= 3 || a0 !== a1, est: a0 !== a1 ? a1 : dir(da > 0), fl: da > 0 ? '▲' : '▼',
+          t: a0 !== a1 ? 'Liquidez pasó de ' + CN[a0] + ' a ' + CN[a1] : 'Liquidez ácida ' + (da > 0 ? 'mejoró' : 'empeoró'),
+          s: 'De ' + X(b0.acido) + ' a ' + X(b1.acido) });
+      }
+      [{ k: 'caja', n: 'Caja y bancos', mejor: 1 }, { k: 'cheques', n: 'Ch. en cartera', mejor: 1 }, { k: 'proveedores', n: 'Deuda con proveedores', mejor: -1 }, { k: 'chpropio', n: 'Ch. propio pendiente', mejor: -1 }]
+        .forEach(function (x) {
+          var p0 = b0.vals[x.k], p1 = b1.vals[x.k];
+          if (!p0) return;
+          var r = (p1 - p0) / p0 * 100;
+          cand.push({ score: Math.abs(r), min: Math.abs(r) >= 5, est: dir(r * x.mejor > 0), fl: r > 0 ? '▲' : '▼',
+            t: x.n + ' ' + (r > 0 ? 'subió ' : 'bajó ') + M(Math.abs(p1 - p0)), s: 'De ' + M(p0) + ' a ' + M(p1) });
+        });
+    }
+    // Venta de los últimos 7 días contra los 7 anteriores
+    var V = ventasPlanas(), hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    var s1 = 0, s0 = 0;
+    V.filas.forEach(function (r) {
+      var dd = Math.round((hoy - new Date(r.f.y, r.f.m - 1, r.f.d)) / 864e5);
+      if (dd >= 0 && dd < 7) s1 += r.imp; else if (dd >= 7 && dd < 14) s0 += r.imp;
+    });
+    if (s0 > 0 && s1 > 0) {
+      var rv = (s1 - s0) / s0 * 100;
+      cand.push({ score: Math.abs(rv), min: Math.abs(rv) >= 10, est: dir(rv > 0), fl: rv > 0 ? '▲' : '▼',
+        t: 'Venta de la semana ' + (rv > 0 ? 'subió' : 'bajó') + ' ' + nf0.format(Math.abs(rv)) + '%', s: M(s1) + ' en los últimos 7 días vs. ' + M(s0) });
+    }
+    var lista = cand.filter(function (c) { return c.min; }).sort(function (a, b) { return b.score - a.score; }).slice(0, 4);
+    var cab = b1 && b0 ? 'Corte ' + F(b1.fecha) + ' vs. ' + F(b0.fecha) : v1 && v0 ? 'Corte ' + F(v1.fecha) + ' vs. ' + F(v0.fecha) : '';
+    var cuerpo;
+    if (!(b1 && b0) && !(v1 && v0)) cuerpo = '<p class="vacio-c">Para comparar hacen falta al menos dos cortes cargados en BALANCE o DEUDA_VENCIMIENTOS (una fila por semana, sin pisar la anterior).</p>';
+    else if (!lista.length) cuerpo = '<p class="vacio-c">Sin cambios importantes desde el corte anterior.</p>';
+    else cuerpo = '<ul>' + lista.map(function (c) {
+      return '<li class="s-' + c.est + '"><span class="fl">' + c.fl + '</span><div><b>' + esc(c.t) + '</b><span class="d">' + esc(c.s) + '</span></div></li>';
+    }).join('') + '</ul>';
+    return '<section class="cambios" aria-labelledby="t-camb"><div class="cab-linea"><h2 id="t-camb">Qué cambió esta semana</h2><span class="nota">' + esc(cab) + '</span></div>' + cuerpo + '</section>';
+  }
+
+  // ---------- Página ----------
   function cabecera(d) {
-    var html = '<header class="cabecera"><div><div class="sup">Control de gestión · Semáforo</div><h1>' + esc(CFG.titulo || 'Tablero de Comando') + '</h1></div><div class="controles">';
+    var html = '<header class="cabecera"><div><div class="sup">Control de gestión</div><h1>' + esc(CFG.titulo || 'Tablero de Comando') + '</h1></div><div class="controles">';
     if (d) {
+      var hoy = new Date();
+      html += '<span>' + (d.esActual ? 'Hoy ' + F({ d: hoy.getDate(), m: hoy.getMonth() + 1 }) + ' · día hábil ' + d.transcurridos + ' de ' + d.totalDias : 'Período cerrado') + '</span>';
       html += '<select id="sel-mes" aria-label="Mes">' + d.meses.map(function (m) {
         var p = m.split('-');
         return '<option value="' + m + '"' + (m === d.mes ? ' selected' : '') + '>' + C.MESES[+p[1] - 1] + ' ' + p[0] + '</option>';
       }).join('') + '</select>';
     }
-    html += '<button id="btn-act" type="button">Actualizar</button><a class="pastilla enlace" href="detalle.html">Ver detalle →</a></div></header>';
-    return html;
+    return html + '<button id="btn-act" type="button">Actualizar</button></div></header>';
+  }
+
+  function inflacion() {
+    try { var s = localStorage.getItem('tablero.inflacion'); if (s != null && isFinite(+s)) return +s; } catch (e) {}
+    return +CFG.inflacion || 0;
   }
 
   function dibujar() {
@@ -1218,17 +1563,22 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
     } else {
       try {
         var avU = aplicarUmbrales(estado.tablas.umbrales);
-        var d = C.calcular(estado.tablas, estado.mes, { puntoEquilibrio: CFG.puntoEquilibrio, inflacion: inflacion() / 100 });
+        var opc = { puntoEquilibrio: CFG.puntoEquilibrio, inflacion: inflacion() / 100 };
+        var d = C.calcular(estado.tablas, estado.mes, opc);
         estado.mes = d.mes;
-        var lista = indicadores(d).sort(function (x, y) { return PESO[x.estado] - PESO[y.estado] || x.orden - y.orden; });
+        var H = historia(d, opc);
+        var CB = cortesBalance(estado.tablas.balance), CV = cortesVenc(estado.tablas.vencimientos);
+        var lista = indicadores(d, H, CB, CV).sort(function (x, y) { return PESO[x.estado] - PESO[y.estado] || x.orden - y.orden; });
         var avisos = estado.avisos.concat(d.avisos, avU);
         html = cabecera(d) +
           (window.SEMAFORO_DEMO ? '<div class="aviso">Vista previa con datos de ejemplo. Publicada en Vercel, esta página lee las mismas planillas que el tablero.</div>' : '') +
-          resumen(lista, d) +
+          titular(lista, d, CV) +
           (avisos.length ? '<div class="aviso">' + avisos.map(esc).join('<br>') + '</div>' : '') +
-          bloques(lista) +
-          '<p class="pie">' + ({ planilla: 'Umbrales: pestaña UMBRALES de la planilla', mixto: 'Umbrales: pestaña UMBRALES (los que faltan, por defecto)', defecto: tb.umbrales ? 'Umbrales por defecto (revisá la pestaña UMBRALES)' : 'Umbrales por defecto (falta conectar la pestaña UMBRALES)' })[ORIGEN_U] + ' · ' +
-          'Comercial: VentasTrack · Financiero: planilla del tablero' + (estado.leido ? ' · Leído a las ' + hora(estado.leido) : '') + '</p>';
+          cambios(CB, CV) +
+          bloques(lista, d, H) +
+          '<p class="pie">' + ({ planilla: 'Umbrales: pestaña UMBRALES', mixto: 'Umbrales: pestaña UMBRALES (los que faltan, por defecto)', defecto: tb.umbrales ? 'Umbrales por defecto (revisá la pestaña UMBRALES)' : 'Umbrales por defecto' })[ORIGEN_U] +
+          ' · Comercial y clientes: VentasTrack · Financiero: planilla del tablero' + (estado.leido ? ' · Leído a las ' + hora(estado.leido) : '') +
+          ' · <a href="detalle.html">Ver el tablero anterior</a></p>';
       } catch (e) {
         html = cabecera(null) + '<div class="error"><b>Hay un problema con los datos.</b><span>' + esc(e.message) + '</span></div>';
       }
@@ -1238,13 +1588,39 @@ a.enlace:hover { border-color: var(--acento); color: var(--acento); }
     if (sel) sel.addEventListener('change', function () { estado.mes = sel.value; dibujar(); });
     var btn = document.getElementById('btn-act');
     if (btn) btn.addEventListener('click', function () { btn.disabled = true; btn.textContent = 'Actualizando…'; cargar(); });
+    var inp = document.getElementById('inp-infl');
+    if (inp) {
+      inp.addEventListener('click', function (ev) { ev.stopPropagation(); });
+      inp.addEventListener('change', function () {
+        var v = parseFloat(String(inp.value).replace(',', '.'));
+        if (!isFinite(v) || v < 0) v = 0;
+        try { localStorage.setItem('tablero.inflacion', String(v)); } catch (e) {}
+        dibujar();
+      });
+    }
   }
 
-  // Misma inflación que el tablero: la guardada desde el gráfico anual, o la de la configuración.
-  function inflacion() {
-    try { var s = localStorage.getItem('tablero.inflacion'); if (s != null && isFinite(+s)) return +s; } catch (e) {}
-    return +CFG.inflacion || 0;
+  // Abrir y cerrar el detalle de una tarjeta (clic, Enter o espacio).
+  function alternar(btn) {
+    var key = btn.parentNode.getAttribute('data-key');
+    if (estado.abiertas[key]) delete estado.abiertas[key]; else estado.abiertas[key] = true;
+    var y = window.scrollY;
+    dibujar();
+    window.scrollTo(0, y);
+    var card = app.querySelector('.luz[data-key="' + key + '"] .luz-btn');
+    if (card) card.focus({ preventScroll: true });
   }
+  app.addEventListener('click', function (ev) {
+    var btn = ev.target.closest && ev.target.closest('.luz-btn');
+    if (btn) alternar(btn);
+  });
+  app.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    var btn = ev.target.classList && ev.target.classList.contains('luz-btn') ? ev.target : null;
+    if (!btn) return;
+    ev.preventDefault();
+    alternar(btn);
+  });
 
   cargar();
   var min = +CFG.refrescoMinutos;
