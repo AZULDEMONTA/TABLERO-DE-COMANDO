@@ -303,6 +303,24 @@ h1, h2, h3 { margin: 0; }
   .fila-v { grid-template-columns: 1fr; gap: 4px; } .fila-v .num { text-align: left; }
   .tramos-v { grid-template-columns: 1fr; }
 }
+
+/* Explicaciones (ⓘ): al pasar el mouse, al hacer foco o al tocar en el celular */
+.cab-der { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.info { position: static; display: inline-flex; vertical-align: middle; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.info-btn { width: 20px; height: 20px; min-height: 0; padding: 0; border-radius: 50%; border: 1px solid #3B4757; background: transparent; color: var(--tenue);
+  font: italic 600 12px/1 Georgia, 'Times New Roman', serif; cursor: help; display: inline-flex; align-items: center; justify-content: center; }
+.info-btn:hover, .info.ver .info-btn, .info-btn:focus-visible { border-color: var(--acento); color: var(--acento); outline: none; }
+.info-pop { display: none; position: absolute; z-index: 30; top: 52px; left: 10px; right: 10px; max-width: 520px;
+  background: #1B222C; border: 1px solid #3B4757; box-shadow: 0 10px 28px rgba(0, 0, 0, .5); padding: 12px 14px;
+  flex-direction: column; gap: 8px; text-align: left; cursor: default; }
+.info:hover .info-pop, .info.ver .info-pop, .info-btn:focus-visible + .info-pop { display: flex; }
+.ip-r { display: block; font-size: 12.5px; line-height: 1.45; color: var(--tinta); }
+.ip-r b { display: block; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--acento); margin-bottom: 2px; }
+.luz, .titular > div, .cambios { position: relative; }
+.titular .info-pop { top: 44px; }
+.cambios .info-pop { top: 46px; max-width: 560px; }
+.luz:has(.info:hover), .luz:has(.info.ver), .titular > div:has(.info:hover), .titular > div:has(.info.ver) { z-index: 5; }
+@media (hover: none) { .info:hover .info-pop { display: none; } .info.ver .info-pop { display: flex; } }
   </style>
 </head>
 <body>
@@ -1122,8 +1140,13 @@ h1, h2, h3 { margin: 0; }
   }
   function vBO(dm) { return dm.empresa.total > 0 && dm.facturacion.hayDato ? dm.facturacion.boPct : null; }
 
+  // Con menos de estos días hábiles transcurridos, las proyecciones del mes en curso no se evalúan.
+  var MIN_DIAS = 5;
+
   function indicadores(d, H, CB, CV) {
     var e = d.empresa, f = d.facturacion, a = d.anual, out = [];
+    var temprano = d.esActual && d.transcurridos < MIN_DIAS;
+    var pronto = 'Muy pronto para comparar: van ' + d.transcurridos + ' de ' + d.totalDias + ' días hábiles (se evalúa desde el día hábil ' + MIN_DIAS + ')';
     function serie(fn) { return H.map(function (h) { return { et: C.MESES[+h.mes.split('-')[1] - 1].slice(0, 3), v: fn(h) }; }); }
 
     out.push({
@@ -1138,32 +1161,32 @@ h1, h2, h3 { margin: 0; }
       ref: f.hayDato ? f.p + '% del objetivo con ' + d.mthPct + '% del mes · ' + M(f.total) + ' facturado + facturable' : 'Sin facturación cargada para el mes',
       sentido: 'mayor', unidad: '%', serie: serie(function (h) { return h.d.empresa.objetivo && h.d.facturacion.hayDato ? h.d.facturacion.diff : null; }), det: detFact
     });
-    var pe = vPE(d), base = d.esActual ? f.proyeccion : f.total;
+    var pe = temprano ? null : vPE(d), base = d.esActual ? f.proyeccion : f.total;
     out.push({
       key: 'equilibrio', grupo: 'Comercial', titulo: d.esActual ? 'Proyección vs. punto de equilibrio' : 'Facturación vs. punto de equilibrio',
-      n: pe, valor: pe != null ? nf0.format(pe) + '%' : null,
-      ref: pe != null ? (d.esActual ? 'Proyección al cierre ' : 'Facturado ') + M(base) + ' · PE ' + M(f.pe) : 'Falta facturación o punto de equilibrio',
-      sentido: 'mayor', unidad: '%', serie: serie(function (h) { return vPE(h.d); }), det: detPE
+      n: pe, valor: pe != null ? nf0.format(pe) + '%' : null, temprano: temprano,
+      ref: temprano ? pronto : pe != null ? (d.esActual ? 'Proyección al cierre ' : 'Facturado ') + M(base) + ' · PE ' + M(f.pe) : 'Falta facturación o punto de equilibrio',
+      sentido: 'mayor', unidad: '%', serie: serie(function (h) { return temprano && h.d === d ? null : vPE(h.d); }), det: detPE
     });
 
     // Crecimiento real: mes elegido y acumulado a último mes cerrado, 2025 ajustado por inflación
     var mesIt = a.meses[+d.mes.split('-')[1] - 1];
-    var rMes = mesIt && mesIt.varReal != null ? mesIt.varReal * 100 : null;
+    var rMes = !temprano && mesIt && mesIt.varReal != null ? mesIt.varReal * 100 : null;
     var cerr = a.meses.filter(function (x) { return x.estado === 'cerrado' && x.anterior != null; });
     var ultCerr = cerr.length ? cerr[cerr.length - 1] : null;
     var rAcu = a.varReal != null ? a.varReal * 100 : null;
     var partes = [
       { rotulo: mesIt.nombre + (d.esActual ? ' · en curso' : ''), n: rMes, valor: rMes != null ? SP(rMes, true) + '%' : null,
-        ref: rMes == null ? 'Sin dato para comparar' : (d.esActual ? 'Proyección ' + M(mesIt.proyeccion) : 'Facturado ' + M(mesIt.actual)) + ' vs. ' + M(mesIt.ajustado) },
+        ref: temprano ? pronto : rMes == null ? 'Sin dato para comparar' : (d.esActual ? 'Proyección ' + M(mesIt.proyeccion) : 'Facturado ' + M(mesIt.actual)) + ' vs. ' + M(mesIt.ajustado) },
       { rotulo: 'Acumulado' + (ultCerr ? ' ene–' + ultCerr.corto.toLowerCase() : ''), n: rAcu, valor: rAcu != null ? SP(rAcu, true) + '%' : null,
         ref: rAcu == null ? 'Sin meses cerrados para comparar' : M(a.ytdActual) + ' vs. ' + M(a.ytdAjustado) }
     ];
-    var serieCre = a.meses.filter(function (x) { return x.varReal != null && x.mes <= +d.mes.split('-')[1]; }).slice(-6)
+    var serieCre = a.meses.filter(function (x) { return x.varReal != null && x.mes <= +d.mes.split('-')[1] && !(temprano && x.estado === 'encurso'); }).slice(-6)
       .map(function (x) { return { et: x.corto, v: x.varReal * 100 }; });
     out.push({
       key: 'crecimientoReal', grupo: 'Comercial', titulo: 'Crecimiento real vs. ' + (a.anio - 1), ancha: true,
       partes: partes, ref: (a.anio - 1) + ' ajustado por inflación ' + nf0.format(a.inflacion * 100) + '%' + (d.esActual ? '. El mes en curso compara la proyección al cierre.' : '.'),
-      sentido: 'mayor', unidad: '%', serie: serieCre, serieTxt: 'variación real mes a mes', det: detCrec
+      sentido: 'mayor', unidad: '%', serie: serieCre, serieTxt: 'variación real de cada mes', det: detCrec
     });
 
     var vs = d.vendedores || [], abajo = vs.filter(function (r) { return r.diff < 0; }).sort(function (x, y) { return x.diff - y.diff; });
@@ -1213,7 +1236,49 @@ h1, h2, h3 { margin: 0; }
       sentido: 'mayor', unidad: 'x', serie: CB.slice(-6).map(function (c) { return { et: F(c.fecha), v: c.acido }; }), serieTxt: 'últimos cortes', det: detAcido
     });
 
+    // Explicación de cada indicador: qué mide, cómo se calcula (con los números de hoy) y de dónde sale.
+    var hab = d.transcurridos + ' de ' + d.totalDias + ' días hábiles';
+    var infl = nf0.format(a.inflacion * 100) + '%', factor = nf2.format(1 + a.inflacion);
+    var vsI = d.vendedores || [], enR = vsI.filter(function (r) { return r.diff >= 0; }).length;
+    var INFO = {
+      ventaVsRitmo: { mide: 'Si la venta del mes va adelantada o atrasada respecto de lo que debería llevar a esta altura.',
+        calc: e.objetivo ? '% del objetivo vendido (' + e.p + '%: ' + M(e.total) + ' de ' + M(e.objetivo) + ') menos % del mes transcurrido (' + d.mthPct + '%: ' + hab + ') = ' + SP(e.diff) + '%. En cero, la venta va justo al ritmo.' : 'Necesita objetivos cargados para el mes.',
+        fuente: 'Ventas y Objetivos de VentasTrack. Solo cuentan los vendedores con objetivo en el mes. Días hábiles: lunes a viernes menos feriados.' },
+      facturacionVsRitmo: { mide: 'Lo mismo que la venta, pero con lo facturado: si la facturación del mes va al ritmo del objetivo.',
+        calc: f.hayDato && e.objetivo ? 'Facturado ' + M(f.facturado) + ' + facturable ' + M(f.facturable) + ' = ' + M(f.total) + ', el ' + f.p + '% del objetivo, menos el ' + d.mthPct + '% del mes transcurrido = ' + SP(f.diff) + '%.' : 'Necesita facturación y objetivos cargados para el mes.',
+        fuente: 'Facturación y Objetivos de VentasTrack. El facturable solo cuenta en el mes en curso.' },
+      equilibrio: { mide: 'Si la facturación del mes alcanza para cubrir el punto de equilibrio, es decir, los costos del mes.',
+        calc: temprano ? 'A principio de mes la proyección no es confiable: con pocos días hábiles, un día flojo o una carga atrasada la mueve mucho. Por eso se evalúa recién desde el día hábil ' + MIN_DIAS + '.'
+          : d.esActual ? 'Proyección al cierre: lo facturado hasta hoy (' + M(f.total) + ') ÷ ' + d.transcurridos + ' días hábiles transcurridos × ' + d.totalDias + ' días hábiles del mes = ' + M(f.proyeccion) + '. Dividido el punto de equilibrio (' + M(f.pe) + ') = ' + (pe != null ? nf0.format(pe) + '%' : '—') + '.'
+          : 'Facturado en el mes (' + M(f.total) + ') ÷ punto de equilibrio (' + M(f.pe) + ') = ' + (pe != null ? nf0.format(pe) + '%' : '—') + '.',
+        fuente: 'Facturación de VentasTrack. El punto de equilibrio sale de la pestaña OBJETIVOS del tablero o, si no está, de los $' + nf0.format((CFG.puntoEquilibrio || 0) / 1e6) + 'M de la configuración.' },
+      crecimientoReal: { mide: 'Si facturamos más que el año pasado en términos reales, es decir, descontando la inflación.',
+        calc: 'Se multiplica la facturación de ' + (a.anio - 1) + ' por ' + factor + ' (inflación ' + infl + ') y se compara con ' + a.anio + '. ' +
+          (temprano ? 'Mes en curso: ' + pronto.toLowerCase() + '. ' : 'Mes: ' + (d.esActual ? 'proyección al cierre' : 'facturado') + ' ÷ mismo mes de ' + (a.anio - 1) + ' ajustado − 1. ') +
+          'Acumulado: ' + M(a.ytdActual) + ' ÷ ' + M(a.ytdAjustado) + ' − 1, solo meses cerrados. La tarjeta toma el color del peor de los dos.',
+        fuente: 'Facturación de VentasTrack de los dos años. La inflación se cambia en el detalle de esta tarjeta.' },
+      vendedoresEnRitmo: { mide: 'Cuántos vendedores van al ritmo del mes.',
+        calc: 'Un vendedor está en ritmo si su % de objetivo es igual o mayor al ' + d.mthPct + '% del mes transcurrido. Hoy: ' + enR + ' de ' + vsI.length + (vsI.length ? ' (' + nf0.format(enR / vsI.length * 100) + '%)' : '') + '. El color se calcula sobre ese porcentaje.',
+        fuente: 'Ventas y Objetivos de VentasTrack. Solo vendedores con objetivo en el mes.' },
+      backorder: { mide: 'Qué parte de lo vendido en el mes todavía no se facturó.',
+        calc: '(Vendido ' + M(e.total) + ' − facturado ' + M(f.facturado) + ' − facturable ' + M(f.facturable) + ') ÷ vendido = ' + (vBO(d) != null ? vBO(d) + '%' : '—') + '.',
+        fuente: 'Ventas y Facturación de VentasTrack.' },
+      clientesActivos: { mide: 'Si hay más o menos clientes comprando que el mes anterior.',
+        calc: cl && !cl.error && cl.activos ? 'Clientes con compra este mes (' + nf0.format(cl.activos) + ') ÷ clientes que habían comprado en ' + cl.mesAnt + (d.esActual ? ' hasta el mismo día' : '') + ' (' + nf0.format(cl.activosAnt) + ') − 1 = ' + SP(cl.varAct, true) + '%. Un cliente cuenta si su compra neta del mes es mayor a cero.' : 'Necesita ventas con cliente en el mes.',
+        fuente: 'Columna Cliente de la pestaña Ventas de VentasTrack. Un mismo cliente escrito de dos formas cuenta como dos.' },
+      concentracion: { mide: 'Cuánto depende la venta de pocos clientes.',
+        calc: cl && !cl.error && cl.activos ? 'Venta de los ' + cl.top + ' mejores clientes (el 20% de ' + cl.activos + ') ÷ venta total del mes (' + M(cl.total) + ') = ' + nf0.format(cl.conc) + '%. Más alto = más dependencia.' : 'Necesita ventas con cliente en el mes.',
+        fuente: 'Columna Cliente de la pestaña Ventas de VentasTrack.' },
+      deudaVencida: { mide: 'Qué parte de lo que nos deben los clientes está atrasado.',
+        calc: v ? 'Tramos ' + v.tramos.filter(function (t) { return t.venc; }).map(function (t) { return t.label; }).join(', ') + ' (' + M(v.vencido) + ') ÷ deuda total en la calle (' + M(v.total) + ') = ' + nf0.format(v.pct) + '%. Menos de 30 días no se considera vencido.' : 'Necesita la pestaña DEUDA_VENCIMIENTOS.',
+        fuente: 'Pestaña DEUDA_VENCIMIENTOS del tablero, último corte' + (v ? ' (' + F(v.fecha) + ')' : '') + '. La tendencia usa los últimos cortes semanales.' },
+      acido: { mide: 'Si lo que tenemos o vamos a cobrar pronto alcanza para lo que hay que pagar pronto.',
+        calc: b ? '(Caja y bancos + ch. en cartera + cuentas a cobrar = ' + M(b.acA) + ') ÷ (proveedores + ch. propio pendiente = ' + M(b.acP) + ') = ' + X(b.acido) + '. Más de 1x significa que alcanza.' : 'Necesita la pestaña BALANCE.',
+        fuente: 'Pestaña BALANCE del tablero, último corte' + (b ? ' (' + F(b.fecha) + ')' : '') + '. La tendencia usa los últimos cortes semanales.' }
+    };
+
     out.forEach(function (it, i) {
+      it.info = INFO[it.key];
       it.orden = i; it.u = U[it.key]; it.regla = regla(it.u, it.sentido, it.unidad);
       if (it.partes) {
         it.partes.forEach(function (x) { x.estado = color(x.n, it.u, it.sentido); });
@@ -1290,7 +1355,7 @@ h1, h2, h3 { margin: 0; }
   }
   function detPE(it, d, H) {
     var filas = H.map(function (h) {
-      var v = vPE(h.d), mm = +h.mes.split('-')[1];
+      var v = it.temprano && h.d === d ? null : vPE(h.d), mm = +h.mes.split('-')[1];
       return v == null ? null : { n: C.MESES[mm - 1] + (h.d.esActual ? ' (proy.)' : ''), p: v / 1.5, m: 100 / 1.5, e: color(v, it.u, 'mayor'), t: nf0.format(v) + '% del PE' };
     }).filter(Boolean);
     return titDet('Últimos meses vs. punto de equilibrio') + barras(filas) +
@@ -1384,6 +1449,22 @@ h1, h2, h3 { margin: 0; }
       nota('Liquidez ácida = activo líquido ÷ pasivo inmediato. Corte ' + F(b.fecha) + '.');
   }
 
+  // ---------- Explicaciones (ⓘ) ----------
+  /* Se ven al pasar el mouse o al hacer foco en la "i"; en el celular, al tocarla. */
+  function info(titulo, partes) {
+    return '<span class="info"><button class="info-btn" type="button" aria-label="Cómo se calcula: ' + esc(titulo) + '">i</button>' +
+      '<span class="info-pop" role="tooltip">' + partes.filter(function (x) { return x && x[1]; }).map(function (x) {
+        return '<span class="ip-r"><b>' + esc(x[0]) + '</b>' + esc(x[1]) + '</span>';
+      }).join('') + '</span></span>';
+  }
+  function infoTarjeta(it) {
+    var I = it.info || {};
+    var colores = it.regla ? it.regla.map(function (r) { return { verde: 'Verde', amarillo: 'Amarillo', rojo: 'Rojo' }[r.estado] + ': ' + r.texto.charAt(0).toLowerCase() + r.texto.slice(1); }).join(' · ') + '. Los límites se cambian en la pestaña UMBRALES.' : '';
+    var pts = (it.serie || []).filter(function (p) { return p.v != null && isFinite(p.v); }).length;
+    var tend = pts >= 2 ? 'La línea chica muestra la ' + (it.serieTxt ? it.serieTxt : 'evolución en los últimos ' + pts + ' meses') + ' y si viene mejorando o empeorando contra el dato anterior.' : '';
+    return info(it.titulo, [['Qué mide', I.mide], ['Cómo se calcula', I.calc], ['De dónde sale', I.fuente], ['Colores', colores], ['Tendencia', tend]]);
+  }
+
   // ---------- Tarjeta ----------
   function tarjeta(it, d, H) {
     var abierta = !!estado.abiertas[it.key];
@@ -1411,7 +1492,7 @@ h1, h2, h3 { margin: 0; }
     if (abierta) { try { det = it.det(it, d, H); } catch (err) { det = nota('No se pudo armar el detalle: ' + err.message); } }
     return '<article class="luz' + (it.ancha ? ' ancha' : '') + (abierta ? ' abierta' : '') + ' s-' + it.estado + '" data-key="' + it.key + '">' +
       '<div class="luz-btn" role="button" tabindex="0" aria-expanded="' + abierta + '">' +
-      '<div class="luz-cab"><h3>' + esc(it.titulo) + '</h3><span class="luz-estado"><span class="foco"></span>' + NOMBRE[it.estado] + '</span></div>' +
+      '<div class="luz-cab"><h3>' + esc(it.titulo) + '</h3><span class="cab-der"><span class="luz-estado"><span class="foco"></span>' + NOMBRE[it.estado] + '</span>' + infoTarjeta(it) + '</span></div>' +
       cuerpo + ley + resp +
       '<span class="abrir">' + (abierta ? 'Cerrar detalle ▴' : 'Ver detalle ▾') + '</span></div>' +
       (abierta ? '<div class="detalle">' + det + '</div>' : '') + '</article>';
@@ -1451,14 +1532,17 @@ h1, h2, h3 { margin: 0; }
     var luz = { rojo: 'on-r', amarillo: 'on-a', verde: 'on-v' }[general] || '';
     var html = '<section class="titular" aria-label="Resumen"><div class="estado s-' + general + '">' +
       '<div class="semaforo ' + luz + '" aria-hidden="true"><i class="l-r"></i><i class="l-a"></i><i class="l-v"></i></div>' +
-      '<div class="estado-txt"><span class="preg">Estado general · ' + esc(d.mesNombre) + '</span><h2>' + tit + '</h2>' +
+      '<div class="estado-txt"><span class="preg">Estado general · ' + esc(d.mesNombre) + ' ' + info('Estado general', [
+        ['Qué muestra', 'Cuántos indicadores del tablero están en cada color este mes. El semáforo toma el peor: si hay uno en rojo, se enciende la luz roja.'],
+        ['Mirar primero', 'Lista los indicadores en rojo, en el orden en que aparecen más abajo.'],
+        ['Colores', 'Cada indicador tiene sus límites de verde y rojo en la pestaña UMBRALES. Gris significa que falta el dato o que es muy pronto para evaluarlo.']]) + '</span><h2>' + tit + '</h2>' +
       '<p>' + (foco.length ? 'Mirar primero: ' + esc(foco.join(', ')) + '.' : d.esActual ? 'Día hábil ' + d.transcurridos + ' de ' + d.totalDias + ' (' + d.mthPct + '% del mes).' : 'Mes cerrado.') + '</p>' +
       '<div class="cuentas">' + ['rojo', 'amarillo', 'verde', 'gris'].filter(function (s) { return cnt[s] || s !== 'gris'; }).map(function (s) {
         return '<span class="s-' + s + '"><span class="foco"></span>' + cnt[s] + ' ' + NOMBRE[s].toLowerCase() + '</span>'; }).join('') + '</div></div></div>';
 
     var pe = lista.filter(function (it) { return it.key === 'equilibrio'; })[0];
     var f = d.facturacion, base = d.esActual ? f.proyeccion : f.total;
-    html += '<div class="preg-box s-' + pe.estado + '"><span class="preg">¿Llegamos al mes?</span>' +
+    html += '<div class="preg-box s-' + pe.estado + '"><span class="preg">¿Llegamos al mes? ' + info('¿Llegamos al mes?', [['Qué muestra', 'Si la facturación del mes cubre el punto de equilibrio. Es el mismo número de la tarjeta "' + pe.titulo + '".'], ['Cómo se calcula', (pe.info || {}).calc]]) + '</span>' +
       '<span class="big">' + (pe.valor || '—') + '</span>' +
       '<span class="tit-sub">' + (pe.n != null ? 'del punto de equilibrio con ' + (d.esActual ? 'la proyección al cierre' : 'lo facturado') + ' (' + M(base) + ' de ' + M(f.pe) + ')' : esc(pe.ref)) + '</span>' +
       (pe.n != null ? '<span class="tit-pie"><span class="foco"></span>' + (base >= f.pe ? 'Supera el equilibrio por ' + M(base - f.pe) : 'Faltan ' + M(f.pe - base)) + '</span>' : '') + '</div>';
@@ -1467,7 +1551,7 @@ h1, h2, h3 { margin: 0; }
     var prev = CV.length > 1 ? CV[CV.length - 2] : null, ult = CV.length ? CV[CV.length - 1] : null;
     var cambio = prev && ult && prev.pct != null && ult.pct != null ? (Math.round(ult.pct) === Math.round(prev.pct) ? 'igual que el corte anterior' :
       (ult.pct > prev.pct ? 'subió' : 'bajó') + ' de ' + nf0.format(prev.pct) + '% a ' + nf0.format(ult.pct) + '% desde el ' + F(prev.fecha)) : NOMBRE[dv.estado];
-    html += '<div class="preg-box s-' + dv.estado + '"><span class="preg">¿Nos están pagando?</span>' +
+    html += '<div class="preg-box s-' + dv.estado + '"><span class="preg">¿Nos están pagando? ' + info('¿Nos están pagando?', [['Qué muestra', 'Qué parte de la deuda en la calle está vencida, y cómo cambió desde el corte anterior. Es el mismo número de la tarjeta "Deuda en la calle vencida".'], ['Cómo se calcula', (dv.info || {}).calc]]) + '</span>' +
       '<span class="big">' + (dv.valor || '—') + '</span>' +
       '<span class="tit-sub">' + (ult ? 'de la deuda en la calle está vencida (' + M(ult.vencido) + ' de ' + M(ult.total) + ')' : esc(dv.ref)) + '</span>' +
       (ult ? '<span class="tit-pie"><span class="foco"></span>' + esc(cambio) + '</span>' : '') + '</div></section>';
@@ -1475,9 +1559,9 @@ h1, h2, h3 { margin: 0; }
   }
 
   // ---------- Qué cambió esta semana ----------
-  /* Compara los dos últimos cortes de BALANCE y DEUDA_VENCIMIENTOS, y la venta de los últimos 7 días
-     contra los 7 anteriores. Muestra primero lo que cambió de color y después los mayores movimientos. */
-  function cambios(CB, CV) {
+  /* Compara los dos últimos cortes de BALANCE y DEUDA_VENCIMIENTOS, y la venta de la última semana cerrada
+     (lunes a viernes) contra la anterior. Muestra primero lo que cambió de color y después los mayores movimientos. */
+  function cambios(CB, CV, H) {
     var cand = [], b1 = CB[CB.length - 1], b0 = CB[CB.length - 2], v1 = CV[CV.length - 1], v0 = CV[CV.length - 2];
     function col(n, key, s) { return color(n, U[key], s); }
     function dir(bueno) { return bueno ? 'verde' : 'rojo'; }
@@ -1512,17 +1596,27 @@ h1, h2, h3 { margin: 0; }
             t: x.n + ' ' + (r > 0 ? 'subió ' : 'bajó ') + M(Math.abs(p1 - p0)), s: 'De ' + M(p0) + ' a ' + M(p1) });
         });
     }
-    // Venta de los últimos 7 días contra los 7 anteriores
-    var V = ventasPlanas(), hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    // Venta de la última semana cerrada (lunes a viernes, antes de hoy) contra la semana anterior.
+    // Solo vendedores con objetivo, igual que la venta del mes.
+    var conObj = {};
+    H.forEach(function (h) { (h.d.vendedores || []).forEach(function (r) { conObj[r.vendedor] = 1; }); });
+    var hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    var vie = new Date(hoy); do { vie.setDate(vie.getDate() - 1); } while (vie.getDay() !== 5);
+    var lun = new Date(vie); lun.setDate(vie.getDate() - 4);
+    var lunA = new Date(lun); lunA.setDate(lun.getDate() - 7);
+    var vieA = new Date(vie); vieA.setDate(vie.getDate() - 7);
     var s1 = 0, s0 = 0;
-    V.filas.forEach(function (r) {
-      var dd = Math.round((hoy - new Date(r.f.y, r.f.m - 1, r.f.d)) / 864e5);
-      if (dd >= 0 && dd < 7) s1 += r.imp; else if (dd >= 7 && dd < 14) s0 += r.imp;
+    ventasPlanas().filas.forEach(function (r) {
+      if (!conObj[r.vend]) return;
+      var t = new Date(r.f.y, r.f.m - 1, r.f.d);
+      if (t >= lun && t <= vie) s1 += r.imp; else if (t >= lunA && t <= vieA) s0 += r.imp;
     });
+    function fd(x) { return F({ d: x.getDate(), m: x.getMonth() + 1 }); }
     if (s0 > 0 && s1 > 0) {
       var rv = (s1 - s0) / s0 * 100;
       cand.push({ score: Math.abs(rv), min: Math.abs(rv) >= 10, est: dir(rv > 0), fl: rv > 0 ? '▲' : '▼',
-        t: 'Venta de la semana ' + (rv > 0 ? 'subió' : 'bajó') + ' ' + nf0.format(Math.abs(rv)) + '%', s: M(s1) + ' en los últimos 7 días vs. ' + M(s0) });
+        t: 'Venta de la semana ' + (rv > 0 ? 'subió' : 'bajó') + ' ' + nf0.format(Math.abs(rv)) + '%',
+        s: M(s1) + ' del ' + fd(lun) + ' al ' + fd(vie) + ' vs. ' + M(s0) + ' la semana anterior' });
     }
     var lista = cand.filter(function (c) { return c.min; }).sort(function (a, b) { return b.score - a.score; }).slice(0, 4);
     var cab = b1 && b0 ? 'Corte ' + F(b1.fecha) + ' vs. ' + F(b0.fecha) : v1 && v0 ? 'Corte ' + F(v1.fecha) + ' vs. ' + F(v0.fecha) : '';
@@ -1532,7 +1626,12 @@ h1, h2, h3 { margin: 0; }
     else cuerpo = '<ul>' + lista.map(function (c) {
       return '<li class="s-' + c.est + '"><span class="fl">' + c.fl + '</span><div><b>' + esc(c.t) + '</b><span class="d">' + esc(c.s) + '</span></div></li>';
     }).join('') + '</ul>';
-    return '<section class="cambios" aria-labelledby="t-camb"><div class="cab-linea"><h2 id="t-camb">Qué cambió esta semana</h2><span class="nota">' + esc(cab) + '</span></div>' + cuerpo + '</section>';
+    var expl = info('Qué cambió esta semana', [
+      ['Qué compara', 'El último corte de BALANCE y DEUDA_VENCIMIENTOS contra el corte anterior, y la venta de la última semana cerrada (lunes a viernes) contra la semana previa.'],
+      ['Qué muestra', 'Hasta 4 cambios: primero los indicadores que cambiaron de color y después los movimientos más grandes. En verde lo que mejoró y en rojo lo que empeoró.'],
+      ['Cuándo aparece un cambio', 'Deuda vencida: 1 punto o más. Tramos vencidos: 15% o más. Liquidez: 3% o más. Caja, cheques, proveedores y ch. propio: 5% o más. Venta de la semana: 10% o más (solo vendedores con objetivo).'],
+      ['Para que funcione', 'Cada corte tiene que ser una fila nueva con su fecha, sin pisar la anterior.']]);
+    return '<section class="cambios" aria-labelledby="t-camb"><div class="cab-linea"><h2 id="t-camb">Qué cambió esta semana ' + expl + '</h2><span class="nota">' + esc(cab) + '</span></div>' + cuerpo + '</section>';
   }
 
   // ---------- Página ----------
@@ -1574,7 +1673,7 @@ h1, h2, h3 { margin: 0; }
           (window.SEMAFORO_DEMO ? '<div class="aviso">Vista previa con datos de ejemplo. Publicada en Vercel, esta página lee las mismas planillas que el tablero.</div>' : '') +
           titular(lista, d, CV) +
           (avisos.length ? '<div class="aviso">' + avisos.map(esc).join('<br>') + '</div>' : '') +
-          cambios(CB, CV) +
+          cambios(CB, CV, H) +
           bloques(lista, d, H) +
           '<p class="pie">' + ({ planilla: 'Umbrales: pestaña UMBRALES', mixto: 'Umbrales: pestaña UMBRALES (los que faltan, por defecto)', defecto: tb.umbrales ? 'Umbrales por defecto (revisá la pestaña UMBRALES)' : 'Umbrales por defecto' })[ORIGEN_U] +
           ' · Comercial y clientes: VentasTrack · Financiero: planilla del tablero' + (estado.leido ? ' · Leído a las ' + hora(estado.leido) : '') +
@@ -1611,8 +1710,18 @@ h1, h2, h3 { margin: 0; }
     if (card) card.focus({ preventScroll: true });
   }
   app.addEventListener('click', function (ev) {
-    var btn = ev.target.closest && ev.target.closest('.luz-btn');
+    if (!ev.target.closest) return;
+    var inf = ev.target.closest('.info');
+    app.querySelectorAll('.info.ver').forEach(function (x) { if (x !== inf) x.classList.remove('ver'); });
+    if (inf) {
+      if (ev.target.closest('.info-btn')) inf.classList.toggle('ver');
+      return;
+    }
+    var btn = ev.target.closest('.luz-btn');
     if (btn) alternar(btn);
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') app.querySelectorAll('.info.ver').forEach(function (x) { x.classList.remove('ver'); });
   });
   app.addEventListener('keydown', function (ev) {
     if (ev.key !== 'Enter' && ev.key !== ' ') return;
