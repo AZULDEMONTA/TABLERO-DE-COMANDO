@@ -266,15 +266,14 @@ h1, h2, h3 { margin: 0; }
 .abrir { font-size: 12px; color: var(--tenue); font-family: var(--mono); align-self: flex-end; margin-top: auto; }
 .luz.abierta .abrir, .luz-btn:hover .abrir { color: var(--acento); }
 
-/* Detalle: panel debajo del grupo */
-.paneles { display: flex; flex-direction: column; gap: 12px; }
-.panel { background: var(--suave); border: 1px solid var(--borde); border-top: 3px solid var(--s); scroll-margin-top: 16px; }
-.panel-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px dashed var(--borde); }
-.panel-cab h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; min-width: 0; }
-.panel-cab h3 .pv { font-family: var(--mono); font-weight: 500; color: var(--s); }
-.panel-cerrar { background: transparent; border: 1px solid var(--borde); color: var(--tenue); font: 12px var(--mono); padding: 6px 10px; cursor: pointer; white-space: nowrap; }
-.panel-cerrar:hover, .panel-cerrar:focus-visible { color: var(--acento); border-color: var(--acento); outline: none; }
-.panel .detalle { border-top: 0; background: transparent; }
+/* Detalle: la tarjeta abierta sube arriba de los grupos, con su detalle al lado */
+.foco-vista { display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 16px; }
+.foco-cuerpo { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.foco-cuerpo .luz { height: 100%; }
+.foco-cuerpo .detalle { border: 1px solid var(--borde); border-top: 3px solid var(--s); min-width: 0; }
+.foco-cuerpo .partes { grid-template-columns: 1fr; gap: 12px; }
+.foco-cuerpo .parte + .parte { border-left: 0; padding-left: 0; border-top: 1px solid var(--borde); padding-top: 12px; }
+@media (max-width: 760px) { .foco-cuerpo { grid-template-columns: 1fr; } }
 .detalle { border-top: 1px dashed var(--borde); padding: 18px; display: flex; flex-direction: column; gap: 14px; background: var(--suave); cursor: default; }
 .det-tit { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--acento); }
 .det-nota { margin: 0; font-size: 13px; color: var(--tenue); line-height: 1.45; }
@@ -1509,14 +1508,14 @@ h1, h2, h3 { margin: 0; }
     { g: 'Clientes', p: '¿Cómo está la cartera?' },
     { g: 'Financiero', p: '¿Nos están pagando?' }
   ];
-  function panel(it, d, H) {
+  function focoVista(lista, d, H) {
+    var it = lista.filter(function (x) { return estado.abiertas[x.key]; })[0];
+    if (!it) return '';
     var det;
     try { det = it.det(it, d, H); } catch (err) { det = nota('No se pudo armar el detalle: ' + err.message); }
-    var val = it.partes ? '' : (it.valor != null ? '<span class="pv">' + esc(it.valor) + '</span>' : '');
-    return '<section class="panel s-' + it.estado + '" data-panel="' + it.key + '" aria-label="Detalle: ' + esc(it.titulo) + '">' +
-      '<div class="panel-cab"><h3><span class="foco"></span>' + esc(it.titulo) + val + '</h3>' +
-      '<button class="panel-cerrar" type="button" data-cerrar="' + it.key + '">Cerrar ✕</button></div>' +
-      '<div class="detalle">' + det + '</div></section>';
+    return '<section class="bloque foco-vista" id="foco-vista" aria-label="Detalle: ' + esc(it.titulo) + '"><div class="bloque-cab"><h2>' + esc(it.grupo) +
+      '<span class="pregunta">Detalle de ' + esc(it.titulo) + '</span></h2></div>' +
+      '<div class="foco-cuerpo">' + tarjeta(it, d, H) + '<div class="detalle s-' + it.estado + '">' + det + '</div></div></section>';
   }
   function bloques(lista, d, H) {
     return GRUPOS.map(function (G) {
@@ -1524,13 +1523,13 @@ h1, h2, h3 { margin: 0; }
       if (!items.length) return '';
       var cnt = { rojo: 0, amarillo: 0, verde: 0, gris: 0 };
       items.forEach(function (it) { cnt[it.estado]++; });
-      var abiertos = items.filter(function (it) { return estado.abiertas[it.key]; });
+      var resto = items.filter(function (it) { return !estado.abiertas[it.key]; });
       var marcas = ['rojo', 'amarillo', 'verde', 'gris'].filter(function (s) { return cnt[s]; }).map(function (s) {
         return '<span class="s-' + s + '"><span class="foco"></span>' + cnt[s] + ' ' + NOMBRE[s].toLowerCase() + '</span>';
       }).join('');
       return '<section class="bloque" aria-label="' + G.g + '"><div class="bloque-cab"><h2>' + G.g + '<span class="pregunta">' + G.p + '</span></h2><div class="bloque-cuenta">' + marcas + '</div></div>' +
-        '<div class="grilla">' + items.map(function (it) { return tarjeta(it, d, H); }).join('') + '</div>' +
-        (abiertos.length ? '<div class="paneles">' + abiertos.map(function (it) { return panel(it, d, H); }).join('') + '</div>' : '') + '</section>';
+        (resto.length ? '<div class="grilla">' + resto.map(function (it) { return tarjeta(it, d, H); }).join('') + '</div>' : '') +
+'</section>';
     }).join('');
   }
 
@@ -1690,6 +1689,7 @@ h1, h2, h3 { margin: 0; }
           titular(lista, d, CV) +
           (avisos.length ? '<div class="aviso">' + avisos.map(esc).join('<br>') + '</div>' : '') +
           cambios(CB, CV, H) +
+          focoVista(lista, d, H) +
           bloques(lista, d, H) +
           '<p class="pie">' + ({ planilla: 'Umbrales: pestaña UMBRALES', mixto: 'Umbrales: pestaña UMBRALES (los que faltan, por defecto)', defecto: tb.umbrales ? 'Umbrales por defecto (revisá la pestaña UMBRALES)' : 'Umbrales por defecto' })[ORIGEN_U] +
           ' · Comercial y clientes: VentasTrack · Financiero: planilla del tablero' + (estado.leido ? ' · Leído a las ' + hora(estado.leido) : '') +
@@ -1718,15 +1718,13 @@ h1, h2, h3 { margin: 0; }
   // Abrir y cerrar el detalle de una tarjeta (clic, Enter o espacio).
   function alternar(key) {
     var abre = !estado.abiertas[key];
-    if (abre) estado.abiertas[key] = true; else delete estado.abiertas[key];
-    var y = window.scrollY;
+    estado.abiertas = {};
+    if (abre) estado.abiertas[key] = true;
     dibujar();
-    window.scrollTo(0, y);
+    var fv = document.getElementById('foco-vista');
+    if (fv) fv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     var card = app.querySelector('.luz[data-key="' + key + '"] .luz-btn');
     if (card) card.focus({ preventScroll: true });
-    // Al abrir, se muestra el panel si quedó fuera de la pantalla.
-    var pn = abre && app.querySelector('.panel[data-panel="' + key + '"]');
-    if (pn) { var r = pn.getBoundingClientRect(); if (r.top > window.innerHeight - 80 || r.top < 0) pn.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   }
   app.addEventListener('click', function (ev) {
     if (!ev.target.closest) return;
@@ -1736,8 +1734,6 @@ h1, h2, h3 { margin: 0; }
       if (ev.target.closest('.info-btn')) inf.classList.toggle('ver');
       return;
     }
-    var cerrar = ev.target.closest('.panel-cerrar');
-    if (cerrar) { alternar(cerrar.getAttribute('data-cerrar')); return; }
     var btn = ev.target.closest('.luz-btn');
     if (btn) alternar(btn.parentNode.getAttribute('data-key'));
   });
