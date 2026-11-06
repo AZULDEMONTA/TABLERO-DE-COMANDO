@@ -231,7 +231,7 @@ h1, h2, h3 { margin: 0; }
 .luz { background: var(--tarjeta); border: 1px solid var(--borde); border-top: 3px solid var(--s); display: flex; flex-direction: column; min-width: 0; }
 .luz.s-rojo { border-color: rgba(255, 92, 92, .45); border-top-color: var(--rojo); }
 .luz.ancha { grid-column: span 2; }
-.luz.abierta { grid-column: 1 / -1; }
+.luz.abierta { box-shadow: 0 0 0 1px var(--acento); }
 .luz-btn { cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; flex: 1; }
 .luz-btn:focus-visible { outline: 2px solid var(--acento); outline-offset: -2px; }
 .luz-btn:hover h3 { color: var(--acento); }
@@ -266,7 +266,15 @@ h1, h2, h3 { margin: 0; }
 .abrir { font-size: 12px; color: var(--tenue); font-family: var(--mono); align-self: flex-end; margin-top: auto; }
 .luz.abierta .abrir, .luz-btn:hover .abrir { color: var(--acento); }
 
-/* Detalle */
+/* Detalle: panel debajo del grupo */
+.paneles { display: flex; flex-direction: column; gap: 12px; }
+.panel { background: var(--suave); border: 1px solid var(--borde); border-top: 3px solid var(--s); scroll-margin-top: 16px; }
+.panel-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px dashed var(--borde); }
+.panel-cab h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; min-width: 0; }
+.panel-cab h3 .pv { font-family: var(--mono); font-weight: 500; color: var(--s); }
+.panel-cerrar { background: transparent; border: 1px solid var(--borde); color: var(--tenue); font: 12px var(--mono); padding: 6px 10px; cursor: pointer; white-space: nowrap; }
+.panel-cerrar:hover, .panel-cerrar:focus-visible { color: var(--acento); border-color: var(--acento); outline: none; }
+.panel .detalle { border-top: 0; background: transparent; }
 .detalle { border-top: 1px dashed var(--borde); padding: 18px; display: flex; flex-direction: column; gap: 14px; background: var(--suave); cursor: default; }
 .det-tit { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--acento); }
 .det-nota { margin: 0; font-size: 13px; color: var(--tenue); line-height: 1.45; }
@@ -1477,7 +1485,7 @@ h1, h2, h3 { margin: 0; }
     } else {
       cuerpo = '<div class="val-fila"><span class="luz-val">' + (it.valor != null ? esc(it.valor) : '—') + '</span>' + tendencia(it) + '</div>' +
         '<p class="luz-ref">' + esc(it.ref) + '</p>' +
-        (it.tramos && it.tramos.length && !abierta ? '<div class="tramos-mini">' + it.tramos.map(function (t) {
+        (it.tramos && it.tramos.length ? '<div class="tramos-mini">' + it.tramos.map(function (t) {
           return '<span>' + esc(t.label) + ' <b>' + (it.corte.total ? nf0.format(t.valor / it.corte.total * 100) : '—') + '%</b></span>';
         }).join('') + '</div>' : '');
     }
@@ -1488,14 +1496,11 @@ h1, h2, h3 { margin: 0; }
     var ex = it.extra;
     var resp = ex.resp || ex.com ? '<div class="resp">' + (ex.resp ? '<span class="resp-quien">Responsable: <b>' + esc(ex.resp) + '</b></span>' : '') +
       (ex.com ? '<p class="coment">' + esc(ex.com) + '</p>' : '') + '</div>' : '';
-    var det = '';
-    if (abierta) { try { det = it.det(it, d, H); } catch (err) { det = nota('No se pudo armar el detalle: ' + err.message); } }
     return '<article class="luz' + (it.ancha ? ' ancha' : '') + (abierta ? ' abierta' : '') + ' s-' + it.estado + '" data-key="' + it.key + '">' +
       '<div class="luz-btn" role="button" tabindex="0" aria-expanded="' + abierta + '">' +
       '<div class="luz-cab"><h3>' + esc(it.titulo) + '</h3><span class="cab-der"><span class="luz-estado"><span class="foco"></span>' + NOMBRE[it.estado] + '</span>' + infoTarjeta(it) + '</span></div>' +
       cuerpo + ley + resp +
-      '<span class="abrir">' + (abierta ? 'Cerrar detalle ▴' : 'Ver detalle ▾') + '</span></div>' +
-      (abierta ? '<div class="detalle">' + det + '</div>' : '') + '</article>';
+      '<span class="abrir">' + (abierta ? 'Cerrar detalle ▴' : 'Ver detalle ▾') + '</span></div></article>';
   }
 
   // ---------- Bloques ----------
@@ -1504,17 +1509,28 @@ h1, h2, h3 { margin: 0; }
     { g: 'Clientes', p: '¿Cómo está la cartera?' },
     { g: 'Financiero', p: '¿Nos están pagando?' }
   ];
+  function panel(it, d, H) {
+    var det;
+    try { det = it.det(it, d, H); } catch (err) { det = nota('No se pudo armar el detalle: ' + err.message); }
+    var val = it.partes ? '' : (it.valor != null ? '<span class="pv">' + esc(it.valor) + '</span>' : '');
+    return '<section class="panel s-' + it.estado + '" data-panel="' + it.key + '" aria-label="Detalle: ' + esc(it.titulo) + '">' +
+      '<div class="panel-cab"><h3><span class="foco"></span>' + esc(it.titulo) + val + '</h3>' +
+      '<button class="panel-cerrar" type="button" data-cerrar="' + it.key + '">Cerrar ✕</button></div>' +
+      '<div class="detalle">' + det + '</div></section>';
+  }
   function bloques(lista, d, H) {
     return GRUPOS.map(function (G) {
       var items = lista.filter(function (it) { return it.grupo === G.g; });
       if (!items.length) return '';
       var cnt = { rojo: 0, amarillo: 0, verde: 0, gris: 0 };
       items.forEach(function (it) { cnt[it.estado]++; });
+      var abiertos = items.filter(function (it) { return estado.abiertas[it.key]; });
       var marcas = ['rojo', 'amarillo', 'verde', 'gris'].filter(function (s) { return cnt[s]; }).map(function (s) {
         return '<span class="s-' + s + '"><span class="foco"></span>' + cnt[s] + ' ' + NOMBRE[s].toLowerCase() + '</span>';
       }).join('');
       return '<section class="bloque" aria-label="' + G.g + '"><div class="bloque-cab"><h2>' + G.g + '<span class="pregunta">' + G.p + '</span></h2><div class="bloque-cuenta">' + marcas + '</div></div>' +
-        '<div class="grilla">' + items.map(function (it) { return tarjeta(it, d, H); }).join('') + '</div></section>';
+        '<div class="grilla">' + items.map(function (it) { return tarjeta(it, d, H); }).join('') + '</div>' +
+        (abiertos.length ? '<div class="paneles">' + abiertos.map(function (it) { return panel(it, d, H); }).join('') + '</div>' : '') + '</section>';
     }).join('');
   }
 
@@ -1700,14 +1716,17 @@ h1, h2, h3 { margin: 0; }
   }
 
   // Abrir y cerrar el detalle de una tarjeta (clic, Enter o espacio).
-  function alternar(btn) {
-    var key = btn.parentNode.getAttribute('data-key');
-    if (estado.abiertas[key]) delete estado.abiertas[key]; else estado.abiertas[key] = true;
+  function alternar(key) {
+    var abre = !estado.abiertas[key];
+    if (abre) estado.abiertas[key] = true; else delete estado.abiertas[key];
     var y = window.scrollY;
     dibujar();
     window.scrollTo(0, y);
     var card = app.querySelector('.luz[data-key="' + key + '"] .luz-btn');
     if (card) card.focus({ preventScroll: true });
+    // Al abrir, se muestra el panel si quedó fuera de la pantalla.
+    var pn = abre && app.querySelector('.panel[data-panel="' + key + '"]');
+    if (pn) { var r = pn.getBoundingClientRect(); if (r.top > window.innerHeight - 80 || r.top < 0) pn.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   }
   app.addEventListener('click', function (ev) {
     if (!ev.target.closest) return;
@@ -1717,8 +1736,10 @@ h1, h2, h3 { margin: 0; }
       if (ev.target.closest('.info-btn')) inf.classList.toggle('ver');
       return;
     }
+    var cerrar = ev.target.closest('.panel-cerrar');
+    if (cerrar) { alternar(cerrar.getAttribute('data-cerrar')); return; }
     var btn = ev.target.closest('.luz-btn');
-    if (btn) alternar(btn);
+    if (btn) alternar(btn.parentNode.getAttribute('data-key'));
   });
   document.addEventListener('keydown', function (ev) {
     if (ev.key === 'Escape') app.querySelectorAll('.info.ver').forEach(function (x) { x.classList.remove('ver'); });
@@ -1728,7 +1749,7 @@ h1, h2, h3 { margin: 0; }
     var btn = ev.target.classList && ev.target.classList.contains('luz-btn') ? ev.target : null;
     if (!btn) return;
     ev.preventDefault();
-    alternar(btn);
+    alternar(btn.parentNode.getAttribute('data-key'));
   });
 
   cargar();
