@@ -819,7 +819,7 @@ h1, h2, h3 { margin: 0; }
       anual: { anio: y, inflacion: infl, meses: anual, max: maxV, hayAnterior: hayAnterior,
         cerrados: tot.n, ytdActual: tot.act, ytdAnterior: tot.ant, ytdAjustado: tot.aj,
         varNominal: tot.ant ? tot.act / tot.ant - 1 : null, varReal: tot.aj ? tot.act / tot.aj - 1 : null },
-      balance: bal, vencimientos: venc,
+      balance: bal, vencimientos: venc, factMes: factT.total,
       avisos: avisos
     };
   }
@@ -854,6 +854,7 @@ h1, h2, h3 { margin: 0; }
     { key: 'clientesActivos', nombre: 'Clientes activos', alias: ['clientes activos'], sentido: 'mayor', verde: 0, rojo: -10 },
     { key: 'concentracion', nombre: 'Concentración de clientes', alias: ['concentracion de clientes', 'concentracion'], sentido: 'menor', verde: 60, rojo: 75 },
     { key: 'deudaVencida', nombre: 'Deuda vencida', alias: ['deuda vencida', 'deuda en la calle', 'deuda'], sentido: 'menor', verde: 20, rojo: 35 },
+    { key: 'coberturaStock', nombre: 'Cobertura de stock', alias: ['cobertura de stock', 'cobertura', 'stock vs facturacion', 'stock'], sentido: 'mayor', verde: 75, rojo: 45 },
     { key: 'acido', nombre: 'Liquidez ácida', alias: ['liquidez acida', 'balance acido', 'acido'], sentido: 'mayor', verde: 1.2, rojo: 1 }
   ];
   var U = {}, EXTRA = {}, ORIGEN_U = 'defecto';
@@ -878,7 +879,7 @@ h1, h2, h3 { margin: 0; }
       avisos.push('La pestaña UMBRALES necesita las columnas "Indicador", "Límite verde" y "Límite rojo". Se usan los umbrales por defecto.');
       return avisos;
     }
-    function num(v) { return C.parseNum(String(v == null ? '' : v).replace(/%|pts?|puntos|veces|x$/gi, '').trim()); }
+    function num(v) { return C.parseNum(String(v == null ? '' : v).replace(/%|pts?|puntos|veces|d[ií]as|x$/gi, '').trim()); }
     rows.slice(1).forEach(function (r) {
       var n = norm(r[cI]);
       if (!n) return;
@@ -983,7 +984,7 @@ h1, h2, h3 { margin: 0; }
   function regla(u, sentido, unidad) {
     if (!u) return null;
     function n(v) { return (v < 0 ? '−' : '') + (unidad === 'x' ? nfx : nf0).format(Math.abs(v)); }
-    function f(v) { return n(v) + (unidad === 'x' ? 'x' : '%'); }
+    function f(v) { return n(v) + (unidad === 'x' ? 'x' : unidad === 'dias' ? ' días' : '%'); }
     var a = u[0], b = u[1], out = [];
     if (sentido === 'menor') {
       out.push({ estado: 'verde', texto: 'Hasta ' + f(a) });
@@ -1150,6 +1151,24 @@ h1, h2, h3 { margin: 0; }
   // Con menos de estos días hábiles transcurridos, las proyecciones del mes en curso no se evalúan.
   var MIN_DIAS = 5;
 
+  /* Cobertura de stock: stock al costo ÷ margen ÷ IVA = stock a valor venta neta,
+     comparado con la facturación promedio de los 3 meses cerrados anteriores al mes del corte. */
+  var STOCK_COSTO = isFinite(+CFG.stockCosto) && +CFG.stockCosto > 0 ? +CFG.stockCosto : 0.74;
+  var STOCK_IVA = isFinite(+CFG.stockIva) && +CFG.stockIva > 0 ? +CFG.stockIva : 1.21;
+  function cobStock(c, d) {
+    var costo = c.vals.stock || 0, venta = costo / STOCK_COSTO / STOCK_IVA, meses = [];
+    for (var k = 1; k <= 3; k++) {
+      var y = c.fecha.y, m = c.fecha.m - k;
+      while (m < 1) { m += 12; y--; }
+      var key = y + '-' + (m < 10 ? '0' : '') + m, v = d.factMes ? d.factMes[key] : null;
+      meses.unshift({ y: y, m: m, nom: C.MESES[m - 1], v: v != null ? v : null });
+    }
+    var con = meses.filter(function (x) { return x.v != null; });
+    var prom = con.length ? con.reduce(function (t, x) { return t + x.v; }, 0) / con.length : null;
+    var rot = meses[0].nom.slice(0, 3).toLowerCase() + '–' + meses[2].nom.slice(0, 3).toLowerCase() + (con.length < 3 ? ', ' + con.length + ' con dato' : '');
+    return { costo: costo, venta: venta, dias: prom ? Math.round(venta / (prom / 30)) : null, prom: prom, detalle: meses, rotulo: rot };
+  }
+
   function indicadores(d, H, CB, CV) {
     var e = d.empresa, f = d.facturacion, a = d.anual, out = [];
     var temprano = d.esActual && d.transcurridos < MIN_DIAS;
@@ -1236,6 +1255,14 @@ h1, h2, h3 { margin: 0; }
       sentido: 'menor', unidad: '%', serie: CV.slice(-6).map(function (c) { return { et: F(c.fecha), v: c.pct }; }), serieTxt: 'últimos cortes', det: detDeuda, CV: CV
     });
     var b = CB.length ? CB[CB.length - 1] : null;
+    var cs = b ? cobStock(b, d) : null, CS = CB.slice(-6).map(function (c) { return { c: c, r: cobStock(c, d) }; });
+    out.push({
+      key: 'coberturaStock', grupo: 'Financiero', titulo: 'Cobertura de stock', corte: b, cs: cs, CS: CS,
+      n: cs && cs.dias != null ? cs.dias : null, valor: cs && cs.dias != null ? nf0.format(cs.dias) + ' días' : null,
+      ref: !b ? 'Sin datos de balance' : !cs.prom ? 'Sin facturación de los 3 meses cerrados anteriores al corte'
+        : 'Stock a valor venta neta ' + M(cs.venta) + ' vs. facturación promedio ' + M(cs.prom) + '/mes (' + cs.rotulo + ') · corte ' + F(b.fecha),
+      sentido: 'mayor', unidad: 'dias', serie: CS.map(function (x) { return { et: F(x.c.fecha), v: x.r.dias }; }), serieTxt: 'últimos cortes', det: detStock
+    });
     out.push({
       key: 'acido', grupo: 'Financiero', titulo: 'Liquidez ácida', corte: b,
       n: b ? b.acido : null, valor: b && b.acido != null ? X(b.acido) : null,
@@ -1279,6 +1306,9 @@ h1, h2, h3 { margin: 0; }
       deudaVencida: { mide: 'Qué parte de lo que nos deben los clientes está atrasado.',
         calc: v ? 'Tramos ' + v.tramos.filter(function (t) { return t.venc; }).map(function (t) { return t.label; }).join(', ') + ' (' + M(v.vencido) + ') ÷ deuda total en la calle (' + M(v.total) + ') = ' + nf0.format(v.pct) + '%. Menos de 30 días no se considera vencido.' : 'Necesita la pestaña DEUDA_VENCIMIENTOS.',
         fuente: 'Pestaña DEUDA_VENCIMIENTOS del tablero, último corte' + (v ? ' (' + F(v.fecha) + ')' : '') + '. La tendencia usa los últimos cortes semanales.' },
+      coberturaStock: { mide: 'Para cuántos días de facturación alcanza el stock.',
+        calc: cs && cs.prom ? 'Stock al costo ' + M(cs.costo) + ' ÷ ' + nf2.format(STOCK_COSTO) + ' ÷ ' + nf2.format(STOCK_IVA) + ' = ' + M(cs.venta) + ' a valor venta neta. ÷ facturación promedio por día de ' + cs.rotulo + ' (' + M(cs.prom) + ' por mes ÷ 30) = ' + nf0.format(cs.dias) + ' días.' : 'Necesita la pestaña BALANCE y la facturación de los 3 meses anteriores al corte.',
+        fuente: 'Stock: pestaña BALANCE del tablero, último corte' + (b ? ' (' + F(b.fecha) + ')' : '') + '. Facturación: VentasTrack. Los coeficientes 0,74 y 1,21 se cambian en config.js.' },
       acido: { mide: 'Si lo que tenemos o vamos a cobrar pronto alcanza para lo que hay que pagar pronto.',
         calc: b ? '(Caja y bancos + ch. en cartera + cuentas a cobrar = ' + M(b.acA) + ') ÷ (proveedores + ch. propio pendiente = ' + M(b.acP) + ') = ' + X(b.acido) + '. Más de 1x significa que alcanza.' : 'Necesita la pestaña BALANCE.',
         fuente: 'Pestaña BALANCE del tablero, último corte' + (b ? ' (' + F(b.fecha) + ')' : '') + '. La tendencia usa los últimos cortes semanales.' }
@@ -1308,7 +1338,7 @@ h1, h2, h3 { margin: 0; }
     var path = xy.map(function (q, i) { return (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' ');
     var last = xy[xy.length - 1];
     var dlt = vals[vals.length - 1] - vals[vals.length - 2];
-    var tol = it.unidad === 'x' ? 0.01 : 0.5;
+    var tol = it.unidad === 'x' ? 0.01 : it.unidad === 'dias' ? 1 : 0.5;
     var txt = Math.abs(dlt) < tol ? 'estable' : (it.sentido === 'mayor' ? dlt > 0 : dlt < 0) ? 'mejorando' : 'empeorando';
     var cls = txt === 'mejorando' ? 'mejora' : txt === 'empeorando' ? 'empeora' : '';
     var desde = it.serieTxt || 'últimos ' + pts.length + ' meses';
@@ -1443,6 +1473,26 @@ h1, h2, h3 { margin: 0; }
     if (hist.length > 1) html += titDet('Evolución en los últimos cortes') + barras(hist.map(function (c) {
       return { n: 'Corte ' + F(c.fecha), p: (c.pct || 0) / 60 * 100, e: color(c.pct, it.u, 'menor'), t: nf0.format(c.pct) + '% · ' + M(c.vencido) };
     }));
+    return html;
+  }
+  function detStock(it) {
+    var cs = it.cs, b = it.corte;
+    if (!b) return nota('Sin datos de balance.');
+    var html = '<div class="tabla"><div><span class="t-cab">Stock · corte ' + F(b.fecha) + '</span>' +
+      '<div class="t-r"><span>Stock a valor compra (planilla)</span><span>' + M(cs.costo) + '</span></div>' +
+      '<div class="t-r"><span>÷ ' + nf2.format(STOCK_COSTO) + ' (costo sobre precio de venta)</span><span>' + M(cs.costo / STOCK_COSTO) + '</span></div>' +
+      '<div class="t-r t-tot"><span>÷ ' + nf2.format(STOCK_IVA) + ' (IVA) = stock a valor venta neta</span><span>' + M(cs.venta) + '</span></div></div>' +
+      '<div><span class="t-cab">Facturación de los 3 meses cerrados</span>' +
+      cs.detalle.map(function (x) { return '<div class="t-r"><span>' + esc(x.nom) + ' ' + x.y + '</span><span>' + (x.v != null ? M(x.v) : 'sin dato') + '</span></div>'; }).join('') +
+      '<div class="t-r t-tot"><span>Promedio mensual</span><span>' + M(cs.prom) + '</span></div></div></div>';
+    html += nota('Cobertura = stock a valor venta neta ÷ facturación promedio por día (promedio mensual ÷ 30 = ' + M(cs.prom / 30) + ')' + (cs.dias != null ? ' = ' + nf0.format(cs.dias) + ' días' : '') + '.');
+    var hist = it.CS.filter(function (x) { return x.r.dias != null; });
+    if (hist.length > 1) {
+      var mx = Math.max.apply(null, hist.map(function (x) { return x.r.dias; }).concat([it.u ? it.u[1] * 1.2 : 1]));
+      html += titDet('Evolución en los últimos cortes') + barras(hist.map(function (x) {
+        return { n: 'Corte ' + F(x.c.fecha), p: x.r.dias / mx * 100, e: color(x.r.dias, it.u, 'mayor'), t: nf0.format(x.r.dias) + ' días · ' + M(x.r.venta) };
+      }));
+    }
     return html;
   }
   function detAcido(it) {
