@@ -270,6 +270,8 @@ h1, h2, h3 { margin: 0; }
 .foco-vista { display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 16px; }
 .foco-cuerpo { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 12px; align-items: stretch; }
 .foco-cuerpo .luz { height: 100%; }
+.foco-cuerpo .luz.ancha { grid-column: auto; }
+.foco-cuerpo .graf-wrap svg { min-width: 560px; max-height: 360px; }
 .foco-cuerpo .detalle { border: 1px solid var(--borde); border-top: 3px solid var(--s); min-width: 0; }
 .foco-cuerpo .partes { grid-template-columns: 1fr; gap: 12px; }
 .foco-cuerpo .parte + .parte { border-left: 0; padding-left: 0; border-top: 1px solid var(--borde); padding-top: 12px; }
