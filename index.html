@@ -266,6 +266,28 @@ h1, h2, h3 { margin: 0; }
 .abrir { font-size: 12px; color: var(--tenue); font-family: var(--mono); align-self: flex-end; margin-top: auto; }
 .luz.abierta .abrir, .luz-btn:hover .abrir { color: var(--acento); }
 
+/* Composición del balance: tortas de activo y pasivo */
+.compo { background: var(--tarjeta); border: 1px solid var(--borde); padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+.compo-cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; }
+.compo-cab h3 { font-size: 15px; font-weight: 600; }
+.compo-cab .nota { font-size: 12px; color: var(--tenue); font-family: var(--mono); }
+.compo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.torta { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 18px; align-items: center; min-width: 0; }
+.torta svg { display: block; width: 170px; height: 170px; }
+.torta path { cursor: default; transition: opacity .15s; }
+.torta:has(path:hover) path:not(:hover) { opacity: .45; }
+.torta-ley { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.torta-ley li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; font-size: 13px; }
+.torta-ley i { width: 10px; height: 10px; border-radius: 2px; }
+.torta-ley .n { color: var(--tinta); min-width: 0; overflow-wrap: anywhere; }
+.torta-ley .p { font-family: var(--mono); color: var(--tinta); text-align: right; }
+.torta-ley .m { font-family: var(--mono); color: var(--tenue); text-align: right; min-width: 72px; }
+.torta-ley .tot { border-top: 1px solid var(--borde); padding-top: 6px; font-weight: 600; }
+.compo-pn { margin: 0; font-size: 13px; color: var(--tenue); }
+.compo-pn b { font-family: var(--mono); font-weight: 500; color: var(--tinta); }
+@media (max-width: 900px) { .compo-grid { grid-template-columns: 1fr; } }
+@media (max-width: 420px) { .torta { grid-template-columns: 1fr; justify-items: center; } }
+
 /* Detalle: la tarjeta abierta sube arriba de los grupos, con su detalle al lado */
 .foco-vista { display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 16px; }
 .foco-cuerpo { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 12px; align-items: stretch; }
@@ -1027,13 +1049,13 @@ h1, h2, h3 { margin: 0; }
   }
 
   /* Clientes del mes. Un cliente es activo si su compra neta del mes es mayor a cero.
-     En el mes en curso se compara contra el mes anterior hasta el mismo día. */
+     Se compara contra el mismo mes del año anterior; en el mes en curso, hasta el mismo día. */
   function clientes(d) {
     var V = ventasPlanas();
     if (!V.ok) return null;
     if (V.sinCliente) return { error: 'La pestaña Ventas de VentasTrack no tiene columna Cliente' };
     var p = d.mes.split('-'), y = +p[0], m = +p[1];
-    var yA = m === 1 ? y - 1 : y, mA = m === 1 ? 12 : m - 1;
+    var yA = y - 1, mA = m;
     var mesAnt = yA + '-' + (mA < 10 ? '0' : '') + mA;
     var tope = d.esActual ? new Date().getDate() : 31;
     var act = {}, ant = {}, antTot = {}, nombres = {}, hayAnt = false;
@@ -1058,7 +1080,7 @@ h1, h2, h3 { margin: 0; }
     var dejaron = activos(antTot).filter(function (k) { return !setA[k]; })
       .map(function (k) { return { nom: nombres[k], imp: antTot[k] }; }).sort(function (a, b) { return b.imp - a.imp; });
     return {
-      activos: la.length, activosAnt: lp.length, mesAnt: C.MESES[mA - 1].toLowerCase(),
+      activos: la.length, activosAnt: lp.length, mesAnt: C.MESES[mA - 1].toLowerCase() + ' ' + yA, mesAntCorto: C.MESES[mA - 1].slice(0, 3).toLowerCase() + '. ' + String(yA).slice(2),
       varAct: hayAnt && lp.length ? (la.length / lp.length - 1) * 100 : null,
       siguen: la.filter(function (k) { return setP[k]; }).length,
       nuevos: la.filter(function (k) { return !setP[k]; }).length,
@@ -1239,7 +1261,7 @@ h1, h2, h3 { margin: 0; }
       ref: !cl ? 'Sin ventas del mes' : cl.error ? cl.error : !cl.activos ? 'Sin ventas con cliente en el mes'
         : cl.varAct == null ? 'Sin ventas en ' + cl.mesAnt + ' para comparar'
         : SP(cl.varAct, true) + '% vs. ' + nf0.format(cl.activosAnt) + ' en ' + cl.mesAnt + (d.esActual ? ' a la misma fecha' : ''),
-      sentido: 'mayor', unidad: '%', serie: serie(function (h) { return h.cl && !h.cl.error ? h.cl.varAct : null; }), serieTxt: 'variación vs. mes anterior', det: detCliAct
+      sentido: 'mayor', unidad: '%', serie: serie(function (h) { return h.cl && !h.cl.error ? h.cl.varAct : null; }), serieTxt: 'variación vs. el mismo mes del año anterior', det: detCliAct
     });
     out.push({
       key: 'concentracion', grupo: 'Clientes', titulo: 'Concentración de clientes', cl: cl,
@@ -1299,7 +1321,7 @@ h1, h2, h3 { margin: 0; }
       backorder: { mide: 'Qué parte de lo vendido en el mes todavía no se facturó.',
         calc: '(Vendido ' + M(e.total) + ' − facturado ' + M(f.facturado) + ' − facturable ' + M(f.facturable) + ') ÷ vendido = ' + (vBO(d) != null ? vBO(d) + '%' : '—') + '.',
         fuente: 'Ventas y Facturación de VentasTrack.' },
-      clientesActivos: { mide: 'Si hay más o menos clientes comprando que el mes anterior.',
+      clientesActivos: { mide: 'Si hay más o menos clientes comprando que en el mismo mes del año anterior.',
         calc: cl && !cl.error && cl.activos ? 'Clientes con compra este mes (' + nf0.format(cl.activos) + ') ÷ clientes que habían comprado en ' + cl.mesAnt + (d.esActual ? ' hasta el mismo día' : '') + ' (' + nf0.format(cl.activosAnt) + ') − 1 = ' + SP(cl.varAct, true) + '%. Un cliente cuenta si su compra neta del mes es mayor a cero.' : 'Necesita ventas con cliente en el mes.',
         fuente: 'Columna Cliente de la pestaña Ventas de VentasTrack. Un mismo cliente escrito de dos formas cuenta como dos.' },
       concentracion: { mide: 'Cuánto depende la venta de pocos clientes.',
@@ -1452,7 +1474,7 @@ h1, h2, h3 { margin: 0; }
       '<div class="t-r"><span>Nuevos o que volvieron</span><span>' + cl.nuevos + '</span></div>' +
       '<div class="t-r"><span>Compraron en ' + esc(cl.mesAnt) + ' y todavía no este mes</span><span>' + cl.dejaron.length + '</span></div></div>' +
       '<div><span class="t-cab">Los que más compraban y todavía no compraron</span>' +
-      (dj.length ? dj.map(function (x) { return '<div class="t-r"><span>' + esc(x.nom) + '</span><span>' + M(x.imp) + ' en ' + esc(cl.mesAnt.slice(0, 3)) + '.</span></div>'; }).join('') : '<div class="t-r"><span>Ninguno</span><span></span></div>') +
+      (dj.length ? dj.map(function (x) { return '<div class="t-r"><span>' + esc(x.nom) + '</span><span>' + M(x.imp) + ' en ' + esc(cl.mesAntCorto) + '</span></div>'; }).join('') : '<div class="t-r"><span>Ninguno</span><span></span></div>') +
       '</div></div>';
   }
   function detConc(it) {
@@ -1569,6 +1591,42 @@ h1, h2, h3 { margin: 0; }
       '<span class="pregunta">Detalle de ' + esc(it.titulo) + '</span></h2></div>' +
       '<div class="foco-cuerpo">' + tarjeta(it, d, H) + '<div class="detalle s-' + it.estado + '">' + det + '</div></div></section>';
   }
+  /* Tortas de composición del activo y del pasivo, último corte de BALANCE.
+     Cada rubro tiene siempre el mismo color (por rubro, no por tamaño). */
+  var PALETA = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767'];
+  function torta(titulo, lado, b) {
+    var rub = C.RUBROS.filter(function (r) { return r.lado === lado; });
+    var items = rub.map(function (r, i) { return { n: r.label, v: Math.max(0, b.vals[r.key] || 0), c: PALETA[i % PALETA.length] }; });
+    var tot = items.reduce(function (t, x) { return t + x.v; }, 0);
+    if (!tot) return '<div class="torta"><p class="det-nota">Sin datos de ' + titulo.toLowerCase() + ' en el corte.</p></div>';
+    var R = 80, r0 = 50, cx = 85, cy = 85, a = -Math.PI / 2, svg = '';
+    function pt(rr, ang) { return (cx + rr * Math.cos(ang)).toFixed(2) + ' ' + (cy + rr * Math.sin(ang)).toFixed(2); }
+    items.forEach(function (x) {
+      if (!x.v) return;
+      var da = x.v / tot * Math.PI * 2, a2 = a + da, lg = da > Math.PI ? 1 : 0, tip = esc(x.n) + ': ' + nf1.format(x.v / tot * 100) + '% · ' + M(x.v);
+      if (da >= Math.PI * 2 - 1e-6) {
+        svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + ((R + r0) / 2) + '" fill="none" stroke="' + x.c + '" stroke-width="' + (R - r0) + '"><title>' + tip + '</title></circle>';
+      } else {
+        svg += '<path d="M' + pt(R, a) + ' A' + R + ' ' + R + ' 0 ' + lg + ' 1 ' + pt(R, a2) + ' L' + pt(r0, a2) + ' A' + r0 + ' ' + r0 + ' 0 ' + lg + ' 0 ' + pt(r0, a) + 'Z" fill="' + x.c + '" stroke="#151B23" stroke-width="2"><title>' + tip + '</title></path>';
+      }
+      a = a2;
+    });
+    svg += '<text x="' + cx + '" y="' + (cy - 4) + '" text-anchor="middle" fill="#9AA7B5" font-size="11" letter-spacing="1.5">' + titulo.toUpperCase() + '</text>' +
+      '<text x="' + cx + '" y="' + (cy + 15) + '" text-anchor="middle" fill="#E6EDF3" font-size="16" font-family="DM Mono, monospace">' + M(tot) + '</text>';
+    var orden = items.filter(function (x) { return x.v; }).sort(function (p, q) { return q.v - p.v; });
+    return '<div class="torta"><svg viewBox="0 0 170 170" role="img" aria-label="Composición del ' + titulo.toLowerCase() + '">' + svg + '</svg>' +
+      '<ul class="torta-ley">' + orden.map(function (x) {
+        return '<li><i style="background:' + x.c + '"></i><span class="n">' + esc(x.n) + '</span><span class="p">' + nf0.format(x.v / tot * 100) + '%</span><span class="m">' + M(x.v) + '</span></li>';
+      }).join('') + '<li class="tot"><i></i><span class="n">Total ' + titulo.toLowerCase() + '</span><span class="p">100%</span><span class="m">' + M(tot) + '</span></li></ul></div>';
+  }
+  function composicion(b) {
+    if (!b) return '';
+    var act = 0, pas = 0;
+    C.RUBROS.forEach(function (r) { var v = Math.max(0, b.vals[r.key] || 0); if (r.lado === 'activo') act += v; else pas += v; });
+    return '<div class="compo"><div class="compo-cab"><h3>Composición del balance</h3><span class="nota">Corte ' + F(b.fecha) + ' · stock a valor compra</span></div>' +
+      '<div class="compo-grid">' + torta('Activo', 'activo', b) + torta('Pasivo', 'pasivo', b) + '</div>' +
+      '<p class="compo-pn">Activo ' + M(act) + ' − pasivo ' + M(pas) + ' = patrimonio neto <b>' + M(act - pas) + '</b></p></div>';
+  }
   function bloques(lista, d, H) {
     return GRUPOS.map(function (G) {
       var items = lista.filter(function (it) { return it.grupo === G.g; });
@@ -1581,6 +1639,7 @@ h1, h2, h3 { margin: 0; }
       }).join('');
       return '<section class="bloque" aria-label="' + G.g + '"><div class="bloque-cab"><h2>' + G.g + '<span class="pregunta">' + G.p + '</span></h2><div class="bloque-cuenta">' + marcas + '</div></div>' +
         (resto.length ? '<div class="grilla">' + resto.map(function (it) { return tarjeta(it, d, H); }).join('') + '</div>' : '') +
+        (G.g === 'Financiero' ? composicion((lista.filter(function (x) { return x.key === 'acido'; })[0] || {}).corte) : '') +
 '</section>';
     }).join('');
   }
